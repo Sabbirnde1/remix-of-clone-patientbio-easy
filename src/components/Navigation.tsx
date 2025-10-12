@@ -1,19 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 const Navigation = () => {
-  const menuItems = ["Home", "Features", "Demo", "About", "Impact", "Team", "Investors", "Contact"];
+  const menuItems = ["Features", "Demo", "About", "Team", "Contact"];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Heart className="h-7 w-7 text-secondary fill-secondary" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
               <div>
-                <div className="text-lg font-bold text-foreground">Patient Bio</div>
-                <div className="text-xs text-muted-foreground -mt-1">Health Passport</div>
+                <div className="text-lg font-bold text-foreground tracking-tight">Patient Bio</div>
               </div>
             </div>
           </div>
@@ -34,7 +35,9 @@ const Navigation = () => {
             <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
               Sign In
             </Button>
-            <Button size="sm">Get Started</Button>
+            <Button size="sm" className="bg-gradient-to-r from-primary to-secondary border-0">
+              Get Started
+            </Button>
           </div>
         </div>
       </div>
