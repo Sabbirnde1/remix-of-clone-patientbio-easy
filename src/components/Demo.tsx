@@ -1,18 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Play, CheckCircle2 } from "lucide-react";
-
 const Demo = () => {
-  const demoFeatures = [
-    "Unified health passport dashboard",
-    "Secure document upload & storage",
-    "Provider sharing with one click",
-    "Real-time health insights",
-    "Family member management",
-    "Emergency access controls",
-  ];
-
-  return (
-    <section id="demo" className="py-24 relative overflow-hidden">
+  const demoFeatures = ["Unified health passport dashboard", "Secure document upload & storage", "Provider sharing with one click", "Real-time health insights", "Family member management", "Emergency access controls"];
+  return <section id="demo" className="py-24 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[var(--gradient-mesh)] pointer-events-none" />
       
@@ -34,12 +24,10 @@ const Demo = () => {
             </p>
 
             <ul className="space-y-3 mb-8">
-              {demoFeatures.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
+              {demoFeatures.map((feature, index) => <li key={index} className="flex items-center gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
                   <span className="text-foreground">{feature}</span>
-                </li>
-              ))}
+                </li>)}
             </ul>
 
             <div className="flex flex-wrap gap-4">
@@ -64,9 +52,7 @@ const Demo = () => {
                   <div className="w-3 h-3 rounded-full bg-green-400/60" />
                 </div>
                 <div className="flex-1 ml-4">
-                  <div className="bg-background rounded-md px-3 py-1 text-xs text-muted-foreground max-w-xs">
-                    app.patientbio.com/dashboard
-                  </div>
+                  <div className="bg-background rounded-md px-3 py-1 text-xs text-muted-foreground max-w-xs">patientbio.app/dashboard</div>
                 </div>
               </div>
               
@@ -81,13 +67,11 @@ const Demo = () => {
                 </div>
                 
                 <div className="grid grid-cols-3 gap-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border/50">
+                  {[1, 2, 3].map(i => <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border/50">
                       <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 mb-2" />
                       <div className="h-4 w-16 bg-muted rounded mb-1" />
                       <div className="h-3 w-12 bg-muted-foreground/20 rounded" />
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
@@ -117,8 +101,6 @@ const Demo = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Demo;
