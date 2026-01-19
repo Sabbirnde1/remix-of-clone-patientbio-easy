@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Please enter a valid email address");
+const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,16 +22,37 @@ const AuthPage = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user, signIn, signUp, loading } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/");
+    }
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Basic validation
-    if (!formData.email || !formData.password) {
+    // Validate email
+    const emailResult = emailSchema.safeParse(formData.email);
+    if (!emailResult.success) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
+        title: "Invalid Email",
+        description: emailResult.error.errors[0].message,
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate password
+    const passwordResult = passwordSchema.safeParse(formData.password);
+    if (!passwordResult.success) {
+      toast({
+        title: "Invalid Password",
+        description: passwordResult.error.errors[0].message,
         variant: "destructive",
       });
       setIsLoading(false);
@@ -43,21 +69,57 @@ const AuthPage = () => {
       return;
     }
 
-    // Simulate authentication (replace with actual auth when Cloud is enabled)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    toast({
-      title: isLogin ? "Welcome back!" : "Account created!",
-      description: isLogin
-        ? "You have successfully signed in."
-        : "Your account has been created. You can now sign in.",
-    });
-
-    if (!isLogin) {
-      setIsLogin(true);
-      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
-    } else {
-      navigate("/");
+    try {
+      if (isLogin) {
+        const { error } = await signIn(formData.email, formData.password);
+        if (error) {
+          let message = "An error occurred during sign in.";
+          if (error.message.includes("Invalid login credentials")) {
+            message = "Invalid email or password. Please try again.";
+          } else if (error.message.includes("Email not confirmed")) {
+            message = "Please confirm your email address before signing in.";
+          }
+          toast({
+            title: "Sign In Failed",
+            description: message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully signed in.",
+          });
+          navigate("/");
+        }
+      } else {
+        const { error } = await signUp(formData.email, formData.password);
+        if (error) {
+          let message = "An error occurred during sign up.";
+          if (error.message.includes("User already registered")) {
+            message = "This email is already registered. Please sign in instead.";
+          } else if (error.message.includes("Password")) {
+            message = error.message;
+          }
+          toast({
+            title: "Sign Up Failed",
+            description: message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account created!",
+            description: "You can now sign in with your credentials.",
+          });
+          setIsLogin(true);
+          setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+        }
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
 
     setIsLoading(false);
@@ -66,6 +128,14 @@ const AuthPage = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
@@ -145,7 +215,6 @@ const AuthPage = () => {
                       className="pl-10"
                       value={formData.name}
                       onChange={handleChange}
-                      required={!isLogin}
                     />
                   </div>
                 </div>
