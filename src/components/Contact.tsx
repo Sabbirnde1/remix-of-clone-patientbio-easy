@@ -73,31 +73,31 @@ const Contact = () => {
   ];
 
   return (
-    <section id="contact" className="py-24 bg-muted/30">
+    <section id="contact" className="py-16 sm:py-24 bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+          <span className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-accent/10 text-accent text-xs sm:text-sm font-medium mb-4 sm:mb-6">
             💬 Get In Touch
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-2">
             We'd love to{" "}
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
               hear from you
             </span>
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base sm:text-lg text-muted-foreground px-2">
             Have questions? Need support? Want to partner with us? We're here to help.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 mb-16">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-10 sm:mb-16">
           {/* Contact Form */}
-          <div className="bg-card rounded-2xl border border-border/50 p-8">
-            <h3 className="text-2xl font-bold mb-6">Send us a message</h3>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid sm:grid-cols-2 gap-4">
+          <div className="bg-card rounded-xl sm:rounded-2xl border border-border/50 p-5 sm:p-8">
+            <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Send us a message</h3>
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name" className="text-sm">Name</Label>
                   <Input
                     id="name"
                     name="name"
@@ -105,10 +105,11 @@ const Contact = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-sm">Email</Label>
                   <Input
                     id="email"
                     name="email"
@@ -117,11 +118,12 @@ const Contact = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    className="h-11"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
+                <Label htmlFor="subject" className="text-sm">Subject</Label>
                 <Input
                   id="subject"
                   name="subject"
@@ -129,18 +131,20 @@ const Contact = () => {
                   value={formData.subject}
                   onChange={handleChange}
                   required
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
+                <Label htmlFor="message" className="text-sm">Message</Label>
                 <Textarea
                   id="message"
                   name="message"
                   placeholder="Tell us more..."
-                  rows={5}
+                  rows={4}
                   value={formData.message}
                   onChange={handleChange}
                   required
+                  className="min-h-[120px]"
                 />
               </div>
               <Button
@@ -162,40 +166,40 @@ const Contact = () => {
           </div>
 
           {/* Contact Info & FAQs */}
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Contact Info Cards */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {contactInfo.map((info, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-4 p-4 rounded-xl bg-card border border-border/50"
+                  className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-card border border-border/50"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center flex-shrink-0">
-                    <info.icon className="h-6 w-6 text-primary" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center flex-shrink-0">
+                    <info.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
-                  <div>
-                    <h4 className="font-semibold">{info.title}</h4>
-                    <p className="text-foreground">{info.details}</p>
-                    <p className="text-sm text-muted-foreground">{info.description}</p>
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-sm sm:text-base">{info.title}</h4>
+                    <p className="text-foreground text-sm sm:text-base break-all">{info.details}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{info.description}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Quick FAQs */}
-            <div className="bg-card rounded-2xl border border-border/50 p-6">
-              <h3 className="text-xl font-bold mb-4">Quick Answers</h3>
-              <div className="space-y-4">
+            <div className="bg-card rounded-xl sm:rounded-2xl border border-border/50 p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Quick Answers</h3>
+              <div className="space-y-3 sm:space-y-4">
                 {faqs.map((faq, index) => (
                   <div key={index}>
                     <div className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-medium">{faq.question}</h4>
-                        <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                        <h4 className="font-medium text-sm sm:text-base">{faq.question}</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{faq.answer}</p>
                       </div>
                     </div>
-                    {index < faqs.length - 1 && <div className="border-b border-border/50 mt-4" />}
+                    {index < faqs.length - 1 && <div className="border-b border-border/50 mt-3 sm:mt-4" />}
                   </div>
                 ))}
               </div>
