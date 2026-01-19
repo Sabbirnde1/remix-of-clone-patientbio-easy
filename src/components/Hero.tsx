@@ -27,8 +27,7 @@ const Hero = () => {
 
           {/* Subheadline */}
           <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed font-medium">
-            Secure, patient-owned health records built on blockchain technology. 
-            Access your complete medical history anytime, anywhere.
+            Secure, patient-owned health records built on blockchain and AI technology. Access your complete medical history anytime, anywhere.
           </p>
 
           {/* CTA Buttons */}
