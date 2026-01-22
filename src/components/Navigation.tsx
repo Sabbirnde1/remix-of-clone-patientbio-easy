@@ -4,7 +4,7 @@ import { Sparkles, LogOut, Menu, User, ChevronRight } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 const Navigation = () => {
   const { user, signOut, loading } = useAuth();
@@ -14,13 +14,41 @@ const Navigation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuItems = [
-    { name: "Features", href: "/features" },
-    { name: "Demo", href: "/demo" },
-    { name: "About", href: "/about" },
-    { name: "Team", href: "/team" },
-    { name: "Investors", href: "/investors" },
-    { name: "Contact", href: "/contact" },
+    { name: "Features", href: "/features", sectionId: "features" },
+    { name: "Demo", href: "/demo", sectionId: "demo" },
+    { name: "About", href: "/about", sectionId: "about" },
+    { name: "Team", href: "/team", sectionId: "team" },
+    { name: "Investors", href: "/investors", sectionId: "investors" },
+    { name: "Contact", href: "/contact", sectionId: "contact" },
   ];
+
+  const scrollToSection = useCallback((sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const navHeight = 64; // Height of the fixed navbar
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: elementPosition - navHeight,
+        behavior: "smooth"
+      });
+    }
+  }, []);
+
+  const handleNavClick = useCallback((e: React.MouseEvent, item: { href: string; sectionId: string }) => {
+    // If we're on the homepage, scroll to section
+    if (location.pathname === "/") {
+      e.preventDefault();
+      scrollToSection(item.sectionId);
+    } else {
+      // Navigate to homepage with hash, then scroll
+      e.preventDefault();
+      navigate("/");
+      // Wait for navigation, then scroll
+      setTimeout(() => {
+        scrollToSection(item.sectionId);
+      }, 100);
+    }
+  }, [location.pathname, navigate, scrollToSection]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -52,6 +80,7 @@ const Navigation = () => {
               <Link
                 key={item.name}
                 to={item.href}
+                onClick={(e) => handleNavClick(e, item)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                   isActive(item.href)
                     ? "text-primary bg-primary/10"
@@ -155,7 +184,10 @@ const Navigation = () => {
                         <Link
                           key={item.name}
                           to={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={(e) => {
+                            handleNavClick(e, item);
+                            setMobileMenuOpen(false);
+                          }}
                           className={`flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
                             isActive(item.href)
                               ? "text-primary bg-primary/10"
