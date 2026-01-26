@@ -11,6 +11,9 @@ export interface TeamMember {
   linkedin_url: string | null;
   twitter_url: string | null;
   email: string | null;
+  github_url: string | null;
+  website_url: string | null;
+  phone: string | null;
   is_advisor: boolean;
   display_order: number;
   gradient: string | null;
