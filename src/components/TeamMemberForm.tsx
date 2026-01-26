@@ -34,6 +34,9 @@ const TeamMemberForm = ({ open, onOpenChange, member, onSubmit, isLoading }: Tea
     linkedin_url: member?.linkedin_url || "",
     twitter_url: member?.twitter_url || "",
     email: member?.email || "",
+    github_url: member?.github_url || "",
+    website_url: member?.website_url || "",
+    phone: member?.phone || "",
     is_advisor: member?.is_advisor || false,
     display_order: member?.display_order || 0,
     gradient: member?.gradient || "from-primary to-secondary",
@@ -172,7 +175,7 @@ const TeamMemberForm = ({ open, onOpenChange, member, onSubmit, isLoading }: Tea
             />
           </div>
 
-          {/* Social Links */}
+          {/* Social Links Row 1 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="linkedin">LinkedIn URL</Label>
@@ -196,16 +199,52 @@ const TeamMemberForm = ({ open, onOpenChange, member, onSubmit, isLoading }: Tea
             </div>
           </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder="john@company.com"
-            />
+          {/* Social Links Row 2 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="github">GitHub URL</Label>
+              <Input
+                id="github"
+                type="url"
+                value={formData.github_url || ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, github_url: e.target.value }))}
+                placeholder="https://github.com/..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="website">Personal Website</Label>
+              <Input
+                id="website"
+                type="url"
+                value={formData.website_url || ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, website_url: e.target.value }))}
+                placeholder="https://example.com"
+              />
+            </div>
+          </div>
+
+          {/* Contact Info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email || ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="john@company.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone || ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                placeholder="+1 (555) 123-4567"
+              />
+            </div>
           </div>
 
           {/* Display Order & Gradient */}

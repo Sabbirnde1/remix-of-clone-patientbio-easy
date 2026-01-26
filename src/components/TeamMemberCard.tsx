@@ -1,4 +1,4 @@
-import { Linkedin, Twitter, Mail, Pencil, Trash2 } from "lucide-react";
+import { Linkedin, Twitter, Mail, Pencil, Trash2, Github, Globe, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeamMember } from "@/hooks/useTeamMembers";
 
@@ -63,13 +63,14 @@ const TeamMemberCard = ({ member, isEditable, onEdit, onDelete }: TeamMemberCard
         </p>
       )}
 
-      <div className="flex justify-center gap-2 sm:gap-3">
+      <div className="flex justify-center flex-wrap gap-2 sm:gap-3">
         {member.linkedin_url && (
           <a
             href={member.linkedin_url}
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+            title="LinkedIn"
           >
             <Linkedin className="h-4 w-4" />
           </a>
@@ -80,19 +81,52 @@ const TeamMemberCard = ({ member, isEditable, onEdit, onDelete }: TeamMemberCard
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+            title="X (Twitter)"
           >
             <Twitter className="h-4 w-4" />
+          </a>
+        )}
+        {member.github_url && (
+          <a
+            href={member.github_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+            title="GitHub"
+          >
+            <Github className="h-4 w-4" />
+          </a>
+        )}
+        {member.website_url && (
+          <a
+            href={member.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+            title="Website"
+          >
+            <Globe className="h-4 w-4" />
           </a>
         )}
         {member.email && (
           <a
             href={`mailto:${member.email}`}
             className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+            title="Email"
           >
             <Mail className="h-4 w-4" />
           </a>
         )}
-        {!member.linkedin_url && !member.twitter_url && !member.email && (
+        {member.phone && (
+          <a
+            href={`tel:${member.phone}`}
+            className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+            title="Phone"
+          >
+            <Phone className="h-4 w-4" />
+          </a>
+        )}
+        {!member.linkedin_url && !member.twitter_url && !member.github_url && !member.website_url && !member.email && !member.phone && (
           <div className="flex gap-2">
             <span className="p-2 rounded-lg bg-muted text-muted-foreground/50">
               <Linkedin className="h-4 w-4" />

@@ -20,45 +20,54 @@ export type Database = {
           created_at: string
           display_order: number
           email: string | null
+          github_url: string | null
           gradient: string | null
           id: string
           is_advisor: boolean
           linkedin_url: string | null
           name: string
+          phone: string | null
           profile_image_url: string | null
           role: string
           twitter_url: string | null
           updated_at: string
+          website_url: string | null
         }
         Insert: {
           bio?: string | null
           created_at?: string
           display_order?: number
           email?: string | null
+          github_url?: string | null
           gradient?: string | null
           id?: string
           is_advisor?: boolean
           linkedin_url?: string | null
           name: string
+          phone?: string | null
           profile_image_url?: string | null
           role: string
           twitter_url?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
           bio?: string | null
           created_at?: string
           display_order?: number
           email?: string | null
+          github_url?: string | null
           gradient?: string | null
           id?: string
           is_advisor?: boolean
           linkedin_url?: string | null
           name?: string
+          phone?: string | null
           profile_image_url?: string | null
           role?: string
           twitter_url?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }
