@@ -11,6 +11,7 @@ const STAT_COLORS = [
 
 const Hero = () => {
   const { data: heroStats } = useSiteContent<HeroStats>("hero_stats", DEFAULT_HERO_STATS);
+  const stats = Array.isArray((heroStats as any)?.stats) ? (heroStats as any).stats : DEFAULT_HERO_STATS.stats;
 
   return (
     <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
@@ -55,7 +56,7 @@ const Hero = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
-          {heroStats.stats.map((stat, index) => (
+          {stats.map((stat: { value: string; label: string }, index: number) => (
             <div
               key={index}
               className="group relative bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center shadow-[var(--card-shadow-lg)] hover:shadow-[var(--card-shadow-xl)] transition-all duration-300 border border-border/50 hover:border-primary/30 backdrop-blur-sm"
