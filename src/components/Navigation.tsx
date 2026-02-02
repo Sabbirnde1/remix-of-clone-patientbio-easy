@@ -1,13 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Sparkles, LogOut, Menu, User, ChevronRight } from "lucide-react";
+import { Sparkles, LogOut, Menu, User, ChevronRight, Shield } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useCallback } from "react";
 
 const Navigation = () => {
   const { user, signOut, loading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,6 +100,14 @@ const Navigation = () => {
               <>
                 {user ? (
                   <div className="flex items-center gap-3">
+                    {isAdmin && (
+                      <Link to="/admin">
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <Shield className="h-4 w-4" />
+                          Admin
+                        </Button>
+                      </Link>
+                    )}
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground max-w-[150px] truncate">
@@ -200,6 +210,21 @@ const Navigation = () => {
                           }`} />
                         </Link>
                       ))}
+                      
+                      {/* Admin link in mobile menu */}
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 text-foreground hover:bg-muted/50"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Admin Panel
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </Link>
+                      )}
                     </div>
                   </nav>
 
