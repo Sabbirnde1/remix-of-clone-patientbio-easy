@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useUserRole";
 import {
   useTeamMembers,
   useCreateTeamMember,
@@ -26,6 +27,7 @@ import {
 
 const Team = () => {
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { data: teamMembers, isLoading } = useTeamMembers(false);
   const { data: advisors } = useTeamMembers(true);
 
@@ -106,8 +108,8 @@ const Team = () => {
           </p>
         </div>
 
-        {/* Add Team Member Button (only visible to authenticated users) */}
-        {user && (
+        {/* Add Team Member Button (only visible to admin users) */}
+        {isAdmin && (
           <div className="flex justify-center mb-8">
             <Button onClick={handleOpenForm} className="gap-2">
               <Plus className="h-4 w-4" />
@@ -129,7 +131,7 @@ const Team = () => {
                 <TeamMemberCard
                   key={member.id}
                   member={member}
-                  isEditable={!!user}
+                  isEditable={isAdmin}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
@@ -145,7 +147,7 @@ const Team = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {advisors.map((advisor) => (
                     <div key={advisor.id} className="text-center group relative">
-                      {user && (
+                      {isAdmin && (
                         <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                           <Button
                             variant="ghost"

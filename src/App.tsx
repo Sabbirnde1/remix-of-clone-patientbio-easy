@@ -13,6 +13,12 @@ import InvestorsPage from "./pages/InvestorsPage";
 import ContactPage from "./pages/ContactPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
+import AdminLayout from "./pages/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import UsersPage from "./pages/admin/UsersPage";
+import TeamAdminPage from "./pages/admin/TeamAdminPage";
+import ContentPage from "./pages/admin/ContentPage";
+import MessagesPage from "./pages/admin/MessagesPage";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +38,16 @@ const App = () => (
             <Route path="/investors" element={<InvestorsPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="users" element={<UsersPage />} />
+              <Route path="team" element={<TeamAdminPage />} />
+              <Route path="content" element={<ContentPage />} />
+              <Route path="messages" element={<MessagesPage />} />
+            </Route>
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
