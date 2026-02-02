@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+import { z } from "zod";
 
 export interface HeroStats {
   stats: Array<{ value: string; label: string }>;
@@ -62,6 +63,116 @@ export const DEFAULT_FAQ_CONTENT: FAQContent = {
 type ContentKey = "hero_stats" | "contact_info" | "faq_content";
 type ContentValue = HeroStats | ContactInfo | FAQContent;
 
+const HeroStatSchema = z.object({
+  value: z.string(),
+  label: z.string(),
+});
+
+const HeroStatsSchema = z.object({
+  stats: z.array(HeroStatSchema).min(1),
+});
+
+const ContactInfoSchema = z.object({
+  email: z.string(),
+  emailDescription: z.string(),
+  phone: z.string(),
+  phoneDescription: z.string(),
+  address: z.string(),
+  addressDescription: z.string(),
+});
+
+const FAQItemSchema = z.object({
+  question: z.string(),
+  answer: z.string(),
+});
+
+const FAQContentSchema = z.object({
+  faqs: z.array(FAQItemSchema),
+});
+
+function extractValueFromSiteContentResponse(data: unknown): unknown {
+  // supabase-js should return an object with { value }, but in some cases we may receive an array.
+  if (Array.isArray(data)) return data[0]?.value;
+  if (data && typeof data === "object" && "value" in (data as Record<string, unknown>)) {
+    return (data as Record<string, unknown>).value;
+  }
+  return undefined;
+}
+
+function normalizeHeroStats(raw: unknown, fallback: HeroStats): HeroStats {
+  const parsed = HeroStatsSchema.safeParse(raw);
+  if (parsed.success) return parsed.data as unknown as HeroStats;
+
+  // Legacy shape: { countries, ownership, access }
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    const countries = typeof obj.countries === "string" ? obj.countries : undefined;
+    const ownership = typeof obj.ownership === "string" ? obj.ownership : undefined;
+    const access = typeof obj.access === "string" ? obj.access : undefined;
+
+    if (countries || ownership || access) {
+      return {
+        stats: [
+          { value: countries ?? fallback.stats[0]?.value ?? "", label: fallback.stats[0]?.label ?? "Countries" },
+          { value: ownership ?? fallback.stats[1]?.value ?? "", label: fallback.stats[1]?.label ?? "Patient Owned" },
+          { value: access ?? fallback.stats[2]?.value ?? "", label: fallback.stats[2]?.label ?? "Instant Access" },
+        ],
+      };
+    }
+  }
+
+  return fallback;
+}
+
+function normalizeContactInfo(raw: unknown, fallback: ContactInfo): ContactInfo {
+  const parsed = ContactInfoSchema.safeParse(raw);
+  if (parsed.success) return parsed.data as unknown as ContactInfo;
+
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    const email = typeof obj.email === "string" ? obj.email : fallback.email;
+    const phone = typeof obj.phone === "string" ? obj.phone : fallback.phone;
+    const address = typeof obj.address === "string" ? obj.address : fallback.address;
+
+    const emailDescription =
+      typeof obj.emailDescription === "string" ? obj.emailDescription : fallback.emailDescription;
+    const phoneDescription =
+      typeof obj.phoneDescription === "string" ? obj.phoneDescription : fallback.phoneDescription;
+    const addressDescription =
+      typeof obj.addressDescription === "string" ? obj.addressDescription : fallback.addressDescription;
+
+    return { email, emailDescription, phone, phoneDescription, address, addressDescription };
+  }
+
+  return fallback;
+}
+
+function normalizeFAQContent(raw: unknown, fallback: FAQContent): FAQContent {
+  const parsed = FAQContentSchema.safeParse(raw);
+  if (parsed.success) return parsed.data as unknown as FAQContent;
+
+  // Allow legacy array shape: [{question, answer}, ...]
+  if (Array.isArray(raw)) {
+    const arrayParsed = z.array(FAQItemSchema).safeParse(raw);
+    if (arrayParsed.success) return { faqs: arrayParsed.data as unknown as FAQItem[] };
+  }
+
+  return fallback;
+}
+
+function normalizeContent(key: ContentKey, raw: unknown, fallback: ContentValue): ContentValue {
+  switch (key) {
+    case "hero_stats":
+      return normalizeHeroStats(raw, fallback as HeroStats);
+    case "contact_info":
+      return normalizeContactInfo(raw, fallback as ContactInfo);
+    case "faq_content":
+      return normalizeFAQContent(raw, fallback as FAQContent);
+    default:
+      return fallback;
+  }
+}
+
 export function useSiteContent<T extends ContentValue>(key: ContentKey, defaultValue: T) {
   const queryClient = useQueryClient();
 
@@ -75,8 +186,10 @@ export function useSiteContent<T extends ContentValue>(key: ContentKey, defaultV
         .maybeSingle();
 
       if (error) throw error;
-      if (!data?.value) return defaultValue;
-      return data.value as unknown as T;
+
+      const raw = extractValueFromSiteContentResponse(data);
+      if (raw === undefined || raw === null) return defaultValue;
+      return normalizeContent(key, raw, defaultValue) as T;
     },
   });
 
@@ -88,18 +201,19 @@ export function useSiteContent<T extends ContentValue>(key: ContentKey, defaultV
         .eq("key", key)
         .maybeSingle();
 
-      const jsonValue = value as unknown as Json;
+      // Normalize before persisting so the DB always stores our expected shape.
+      const normalized = normalizeContent(key, value, defaultValue) as unknown as Json;
 
       if (existing) {
         const { error } = await supabase
           .from("site_content")
-          .update({ value: jsonValue, updated_at: new Date().toISOString() })
+          .update({ value: normalized, updated_at: new Date().toISOString() })
           .eq("key", key);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("site_content")
-          .insert([{ key, value: jsonValue }]);
+          .insert([{ key, value: normalized }]);
         if (error) throw error;
       }
     },
