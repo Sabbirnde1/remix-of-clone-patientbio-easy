@@ -36,11 +36,11 @@ export default function AdminLayout() {
       <div className="min-h-screen flex w-full">
         <AdminSidebar />
         <SidebarInset className="flex-1">
-          <header className="flex h-14 items-center gap-4 border-b border-border bg-background px-4">
-            <SidebarTrigger />
+          <header className="flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-border bg-background px-3 sm:px-4">
+            <SidebarTrigger className="h-8 w-8 sm:h-9 sm:w-9" />
             <div className="flex-1" />
           </header>
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-3 sm:p-6">
             <Outlet />
           </main>
         </SidebarInset>
