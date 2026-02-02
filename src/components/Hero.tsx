@@ -1,8 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useSiteContent, DEFAULT_HERO_STATS, type HeroStats } from "@/hooks/useSiteContent";
+
+const STAT_COLORS = [
+  "from-primary to-accent",
+  "from-secondary to-primary",
+  "from-accent to-secondary",
+];
 
 const Hero = () => {
+  const { data: heroStats } = useSiteContent<HeroStats>("hero_stats", DEFAULT_HERO_STATS);
+
   return (
     <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Gradient Mesh Background */}
@@ -46,11 +55,7 @@ const Hero = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
-          {[
-            { value: "195+", label: "Countries", color: "from-primary to-accent" },
-            { value: "100%", label: "Patient Owned", color: "from-secondary to-primary" },
-            { value: "24/7", label: "Instant Access", color: "from-accent to-secondary" },
-          ].map((stat, index) => (
+          {heroStats.stats.map((stat, index) => (
             <div
               key={index}
               className="group relative bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center shadow-[var(--card-shadow-lg)] hover:shadow-[var(--card-shadow-xl)] transition-all duration-300 border border-border/50 hover:border-primary/30 backdrop-blur-sm"
@@ -58,7 +63,7 @@ const Hero = () => {
             >
               <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity from-primary/5 to-secondary/5" />
               <div className="relative">
-                <div className={`text-4xl sm:text-5xl font-bold mb-2 bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                <div className={`text-4xl sm:text-5xl font-bold mb-2 bg-gradient-to-r ${STAT_COLORS[index % STAT_COLORS.length]} bg-clip-text text-transparent`}>
                   {stat.value}
                 </div>
                 <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>

@@ -6,6 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Mail, MapPin, Phone, Send, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  useSiteContent,
+  DEFAULT_CONTACT_INFO,
+  DEFAULT_FAQ_CONTENT,
+  type ContactInfo,
+  type FAQContent,
+} from "@/hooks/useSiteContent";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -16,6 +23,9 @@ const Contact = () => {
     subject: "",
     message: "",
   });
+
+  const { data: contactInfoData } = useSiteContent<ContactInfo>("contact_info", DEFAULT_CONTACT_INFO);
+  const { data: faqData } = useSiteContent<FAQContent>("faq_content", DEFAULT_FAQ_CONTENT);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,35 +65,20 @@ const Contact = () => {
     {
       icon: Mail,
       title: "Email Us",
-      details: "hello@patientbio.app",
-      description: "We'll respond within 24 hours",
+      details: contactInfoData.email,
+      description: contactInfoData.emailDescription,
     },
     {
       icon: Phone,
       title: "Call Us",
-      details: "+1 (555) 123-4567",
-      description: "Mon-Fri, 9am-6pm PST",
+      details: contactInfoData.phone,
+      description: contactInfoData.phoneDescription,
     },
     {
       icon: MapPin,
       title: "Visit Us",
-      details: "123 Innovation Way",
-      description: "San Francisco, CA 94102",
-    },
-  ];
-
-  const faqs = [
-    {
-      question: "How secure is my health data?",
-      answer: "We use military-grade encryption and are HIPAA compliant. Your data is never sold or shared without explicit consent.",
-    },
-    {
-      question: "Can I export my data?",
-      answer: "Yes! You can export all your health records in standard formats like PDF, HL7, or FHIR at any time.",
-    },
-    {
-      question: "Is Patient Bio free?",
-      answer: "We offer a free tier with basic features. Premium plans unlock advanced features like family sharing and AI insights.",
+      details: contactInfoData.address,
+      description: contactInfoData.addressDescription,
     },
   ];
 
@@ -205,7 +200,7 @@ const Contact = () => {
             <div className="bg-card rounded-xl sm:rounded-2xl border border-border/50 p-4 sm:p-6">
               <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Quick Answers</h3>
               <div className="space-y-3 sm:space-y-4">
-                {faqs.map((faq, index) => (
+                {faqData.faqs.map((faq, index) => (
                   <div key={index}>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -214,7 +209,7 @@ const Contact = () => {
                         <p className="text-xs sm:text-sm text-muted-foreground">{faq.answer}</p>
                       </div>
                     </div>
-                    {index < faqs.length - 1 && <div className="border-b border-border/50 mt-3 sm:mt-4" />}
+                    {index < faqData.faqs.length - 1 && <div className="border-b border-border/50 mt-3 sm:mt-4" />}
                   </div>
                 ))}
               </div>
