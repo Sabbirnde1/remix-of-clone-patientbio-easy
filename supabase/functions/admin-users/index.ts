@@ -110,6 +110,34 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (req.method === "GET" && action === "stats") {
+      // Get user signup statistics
+      console.log("Fetching user stats...");
+      
+      const { data: authUsers, error: usersError } = await adminClient.auth.admin.listUsers();
+      
+      if (usersError) {
+        console.error("Error listing users:", usersError);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch user stats" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Return signup dates for all users
+      const signups = authUsers.users.map((user) => ({
+        created_at: user.created_at,
+        email_confirmed_at: user.email_confirmed_at,
+      }));
+
+      console.log(`Returning stats for ${signups.length} users`);
+      
+      return new Response(
+        JSON.stringify({ signups, totalUsers: signups.length }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (req.method === "POST" && action === "set-role") {
       const body = await req.json();
       const { targetUserId, role } = body;
