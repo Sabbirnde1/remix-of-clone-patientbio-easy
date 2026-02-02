@@ -145,11 +145,11 @@ export default function MessagesPage() {
   });
 
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-300">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-300">
+      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Contact Messages</h1>
-          <p className="text-muted-foreground">View and manage contact form submissions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Contact Messages</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">View and manage contact form submissions</p>
         </div>
         <SearchInput
           value={searchQuery}
@@ -174,27 +174,33 @@ export default function MessagesPage() {
         </div>
       ) : paginatedData.length > 0 ? (
         <>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {paginatedData.map((message) => (
               <Card key={message.id} className={message.status === "new" ? "border-primary/50" : ""}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        {message.subject}
+                <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <CardTitle className="text-base sm:text-lg flex items-center gap-2 flex-wrap">
+                        <span className="truncate">{message.subject}</span>
                         {message.status === "new" && (
-                          <Badge variant="default" className="text-xs">New</Badge>
+                          <Badge variant="default" className="text-xs shrink-0">New</Badge>
                         )}
                       </CardTitle>
-                      <CardDescription>
-                        From: {message.name} ({message.email}) • {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                      <CardDescription className="text-xs sm:text-sm">
+                        <span className="block sm:inline">From: {message.name}</span>
+                        <span className="hidden sm:inline"> ({message.email})</span>
+                        <span className="block sm:hidden text-xs">{message.email}</span>
+                        <span className="block sm:inline sm:before:content-['_•_']">
+                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                        </span>
                       </CardDescription>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2 shrink-0">
                       {message.status === "new" ? (
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-9 w-9 sm:h-10 sm:w-10"
                           onClick={() => markAsRead.mutate(message.id)}
                           title="Mark as read"
                         >
@@ -204,6 +210,7 @@ export default function MessagesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-9 w-9 sm:h-10 sm:w-10"
                           onClick={() => markAsUnread.mutate(message.id)}
                           title="Mark as unread"
                         >
@@ -213,16 +220,16 @@ export default function MessagesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-9 w-9 sm:h-10 sm:w-10 text-destructive hover:text-destructive"
                         onClick={() => setDeleteId(message.id)}
-                        className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{message.message}</p>
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <p className="text-xs sm:text-sm text-foreground whitespace-pre-wrap">{message.message}</p>
                 </CardContent>
               </Card>
             ))}

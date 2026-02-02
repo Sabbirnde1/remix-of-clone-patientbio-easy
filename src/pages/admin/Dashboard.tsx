@@ -233,55 +233,55 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-300">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-300">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to the admin panel</p>
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Welcome to the admin panel</p>
       </div>
 
       {isLoading ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <StatCardSkeleton key={i} />
             ))}
           </div>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
             <ChartSkeleton />
             <ChartSkeleton />
           </div>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
             <ChartSkeleton className="col-span-full lg:col-span-2" />
             <ChartSkeleton />
           </div>
         </>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             {statCards.map((stat) => (
               <Card key={stat.title}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 p-3 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                     {stat.title}
                   </CardTitle>
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  <stat.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${stat.color}`} />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{stat.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle>User Signups</CardTitle>
-                <CardDescription>New registrations over the last 30 days</CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">User Signups</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">New registrations over the last 30 days</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px] sm:h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={signupsByDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -312,12 +312,12 @@ export default function Dashboard() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>User Growth</CardTitle>
-                <CardDescription>Cumulative user count over 30 days</CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">User Growth</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Cumulative user count over 30 days</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px] sm:h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={signupsByDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -350,16 +350,16 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
             <Card className="col-span-full lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Message Volume</CardTitle>
-                <CardDescription>Messages received over the last 30 days</CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Message Volume</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Messages received over the last 30 days</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px] sm:h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={messagesByDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <AreaChart data={messagesByDay} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorMessages" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -395,23 +395,23 @@ export default function Dashboard() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Message Status</CardTitle>
-                <CardDescription>Read vs unread breakdown</CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Message Status</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Read vs unread breakdown</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px] sm:h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={messagesByStatus} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <BarChart data={messagesByStatus} layout="vertical" margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-                      <XAxis type="number" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
                       <YAxis 
                         dataKey="status" 
                         type="category" 
-                        tick={{ fontSize: 12 }} 
+                        tick={{ fontSize: 10 }} 
                         tickLine={false}
                         axisLine={false}
-                        width={60}
+                        width={50}
                       />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Bar 
