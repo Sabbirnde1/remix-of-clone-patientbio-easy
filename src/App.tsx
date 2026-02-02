@@ -12,6 +12,7 @@ import TeamPage from "./pages/TeamPage";
 import InvestorsPage from "./pages/InvestorsPage";
 import ContactPage from "./pages/ContactPage";
 import AuthPage from "./pages/AuthPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/investors" element={<InvestorsPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
