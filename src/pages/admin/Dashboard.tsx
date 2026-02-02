@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserCog, Mail, TrendingUp, Calendar } from "lucide-react";
+import { UserCog, Mail, TrendingUp, Calendar, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, LineChart, Line } from "recharts";
 import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -12,6 +12,11 @@ interface ContactMessage {
   id: string;
   status: string;
   created_at: string;
+}
+
+interface UserSignup {
+  created_at: string;
+  email_confirmed_at: string | null;
 }
 
 function StatCardSkeleton() {
@@ -29,9 +34,9 @@ function StatCardSkeleton() {
   );
 }
 
-function ChartSkeleton() {
+function ChartSkeleton({ className = "" }: { className?: string }) {
   return (
-    <Card className="col-span-full lg:col-span-2">
+    <Card className={className}>
       <CardHeader>
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-4 w-48" />
@@ -69,7 +74,19 @@ export default function Dashboard() {
     },
   });
 
-  const isLoading = messagesLoading || teamLoading;
+  const { data: userStats, isLoading: userStatsLoading } = useQuery({
+    queryKey: ["admin-user-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("admin-users?action=stats", {
+        method: "GET",
+      });
+
+      if (error) throw error;
+      return data as { signups: UserSignup[]; totalUsers: number };
+    },
+  });
+
+  const isLoading = messagesLoading || teamLoading || userStatsLoading;
 
   const stats = useMemo(() => {
     if (!messages) return { total: 0, unread: 0, thisWeek: 0 };
@@ -83,6 +100,19 @@ export default function Dashboard() {
       thisWeek: messages.filter(m => new Date(m.created_at) >= weekAgo).length,
     };
   }, [messages]);
+
+  const userStatsCalc = useMemo(() => {
+    if (!userStats?.signups) return { total: 0, thisWeek: 0, verified: 0 };
+    
+    const now = new Date();
+    const weekAgo = subDays(now, 7);
+    
+    return {
+      total: userStats.totalUsers,
+      thisWeek: userStats.signups.filter(u => new Date(u.created_at) >= weekAgo).length,
+      verified: userStats.signups.filter(u => u.email_confirmed_at).length,
+    };
+  }, [userStats]);
 
   const messagesByDay = useMemo(() => {
     if (!messages) return [];
@@ -104,6 +134,43 @@ export default function Dashboard() {
     }));
   }, [messages]);
 
+  const signupsByDay = useMemo(() => {
+    if (!userStats?.signups) return [];
+    
+    const now = new Date();
+    const startDate = subDays(now, 29);
+    const days = eachDayOfInterval({ start: startDate, end: now });
+    
+    const countsByDay = new Map<string, number>();
+    let cumulative = 0;
+    
+    // Count signups before the start date for cumulative
+    userStats.signups.forEach(user => {
+      const userDate = new Date(user.created_at);
+      if (userDate < startDate) {
+        cumulative++;
+      }
+    });
+    
+    // Count by day
+    userStats.signups.forEach(user => {
+      const day = format(startOfDay(new Date(user.created_at)), "yyyy-MM-dd");
+      countsByDay.set(day, (countsByDay.get(day) || 0) + 1);
+    });
+    
+    return days.map(day => {
+      const dayKey = format(day, "yyyy-MM-dd");
+      const signups = countsByDay.get(dayKey) || 0;
+      cumulative += signups;
+      return {
+        date: format(day, "MMM d"),
+        fullDate: dayKey,
+        signups,
+        total: cumulative,
+      };
+    });
+  }, [userStats]);
+
   const messagesByStatus = useMemo(() => {
     if (!messages) return [];
     
@@ -121,6 +188,13 @@ export default function Dashboard() {
 
   const statCards = [
     {
+      title: "Total Users",
+      value: userStatsCalc.total,
+      description: `${userStatsCalc.verified} verified`,
+      icon: Users,
+      color: "text-indigo-500",
+    },
+    {
       title: "Team Members",
       value: teamCount ?? 0,
       description: "Active team members",
@@ -135,18 +209,11 @@ export default function Dashboard() {
       color: "text-green-500",
     },
     {
-      title: "This Week",
-      value: stats.thisWeek,
-      description: "Messages received",
+      title: "New This Week",
+      value: userStatsCalc.thisWeek,
+      description: "User signups",
       icon: TrendingUp,
       color: "text-purple-500",
-    },
-    {
-      title: "Today",
-      value: messagesByDay[messagesByDay.length - 1]?.messages || 0,
-      description: format(new Date(), "MMM d, yyyy"),
-      icon: Calendar,
-      color: "text-orange-500",
     },
   ];
 
@@ -154,6 +221,14 @@ export default function Dashboard() {
     messages: {
       label: "Messages",
       color: "hsl(var(--primary))",
+    },
+    signups: {
+      label: "Signups",
+      color: "hsl(var(--chart-2))",
+    },
+    total: {
+      label: "Total Users",
+      color: "hsl(var(--chart-3))",
     },
   };
 
@@ -171,17 +246,13 @@ export default function Dashboard() {
               <StatCardSkeleton key={i} />
             ))}
           </div>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-2">
             <ChartSkeleton />
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-4 w-40" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-[300px] w-full" />
-              </CardContent>
-            </Card>
+            <ChartSkeleton />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <ChartSkeleton className="col-span-full lg:col-span-2" />
+            <ChartSkeleton />
           </div>
         </>
       ) : (
@@ -201,6 +272,82 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Signups</CardTitle>
+                <CardDescription>New registrations over the last 30 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={signupsByDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar 
+                        dataKey="signups" 
+                        fill="hsl(var(--chart-2))" 
+                        radius={[4, 4, 0, 0]}
+                        name="Signups"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>User Growth</CardTitle>
+                <CardDescription>Cumulative user count over 30 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={signupsByDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line 
+                        type="monotone"
+                        dataKey="total" 
+                        stroke="hsl(var(--chart-3))" 
+                        strokeWidth={2}
+                        dot={false}
+                        name="Total Users"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
@@ -225,13 +372,11 @@ export default function Dashboard() {
                         tick={{ fontSize: 12 }} 
                         tickLine={false}
                         axisLine={false}
-                        className="text-muted-foreground"
                       />
                       <YAxis 
                         tick={{ fontSize: 12 }} 
                         tickLine={false}
                         axisLine={false}
-                        className="text-muted-foreground"
                         allowDecimals={false}
                       />
                       <ChartTooltip content={<ChartTooltipContent />} />
