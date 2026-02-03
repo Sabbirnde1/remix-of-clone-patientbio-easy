@@ -55,7 +55,7 @@ const AuthPage = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [user, loading, navigate]);
 
@@ -162,7 +162,7 @@ const AuthPage = () => {
             title: "Welcome back!",
             description: "You have successfully signed in.",
           });
-          navigate("/");
+          navigate("/dashboard");
         }
       } else {
         const { error } = await signUp(formData.email, formData.password);

@@ -24,6 +24,17 @@ import TeamAdminPage from "./pages/admin/TeamAdminPage";
 import ContentPage from "./pages/admin/ContentPage";
 import MessagesPage from "./pages/admin/MessagesPage";
 
+// Dashboard imports
+import DashboardLayout from "./pages/dashboard/DashboardLayout";
+import DashboardHome from "./pages/dashboard/DashboardHome";
+import ProfilePage from "./pages/dashboard/ProfilePage";
+import HealthDataPage from "./pages/dashboard/HealthDataPage";
+import PrescriptionsPage from "./pages/dashboard/PrescriptionsPage";
+import UploadPage from "./pages/dashboard/UploadPage";
+import ShareDataPage from "./pages/dashboard/ShareDataPage";
+import MyDoctorsPage from "./pages/dashboard/MyDoctorsPage";
+import QRCodePage from "./pages/dashboard/QRCodePage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,6 +57,18 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            
+            {/* Patient Dashboard Routes */}
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<DashboardHome />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="health-data" element={<HealthDataPage />} />
+              <Route path="prescriptions" element={<PrescriptionsPage />} />
+              <Route path="upload" element={<UploadPage />} />
+              <Route path="share" element={<ShareDataPage />} />
+              <Route path="doctors" element={<MyDoctorsPage />} />
+              <Route path="qr-code" element={<QRCodePage />} />
+            </Route>
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>

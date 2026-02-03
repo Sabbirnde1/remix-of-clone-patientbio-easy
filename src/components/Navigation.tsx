@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Sparkles, LogOut, Menu, User, ChevronRight, Shield } from "lucide-react";
+import { Sparkles, LogOut, Menu, User, ChevronRight, Shield, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
@@ -100,6 +100,12 @@ const Navigation = () => {
               <>
                 {user ? (
                   <div className="flex items-center gap-3">
+                    <Link to="/dashboard">
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
                     {isAdmin && (
                       <Link to="/admin">
                         <Button variant="outline" size="sm" className="gap-2">
@@ -210,6 +216,21 @@ const Navigation = () => {
                           }`} />
                         </Link>
                       ))}
+                      
+                      {/* Dashboard link in mobile menu */}
+                      {user && (
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 text-foreground hover:bg-muted/50"
+                        >
+                          <span className="flex items-center gap-2">
+                            <LayoutDashboard className="h-4 w-4" />
+                            Dashboard
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </Link>
+                      )}
                       
                       {/* Admin link in mobile menu */}
                       {isAdmin && (

@@ -47,6 +47,111 @@ export type Database = {
         }
         Relationships: []
       }
+      health_data: {
+        Row: {
+          bad_habits: string | null
+          birth_defects: string | null
+          blood_group: string | null
+          chronic_diseases: string | null
+          created_at: string | null
+          current_medications: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          health_allergies: string | null
+          height: string | null
+          id: string
+          previous_diseases: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bad_habits?: string | null
+          birth_defects?: string | null
+          blood_group?: string | null
+          chronic_diseases?: string | null
+          created_at?: string | null
+          current_medications?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          health_allergies?: string | null
+          height?: string | null
+          id?: string
+          previous_diseases?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bad_habits?: string | null
+          birth_defects?: string | null
+          blood_group?: string | null
+          chronic_diseases?: string | null
+          created_at?: string | null
+          current_medications?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          health_allergies?: string | null
+          height?: string | null
+          id?: string
+          previous_diseases?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_records: {
+        Row: {
+          category: Database["public"]["Enums"]["record_category"] | null
+          description: string | null
+          disease_category:
+            | Database["public"]["Enums"]["disease_category"]
+            | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          notes: string | null
+          provider_name: string | null
+          record_date: string | null
+          title: string
+          uploaded_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["record_category"] | null
+          description?: string | null
+          disease_category?:
+            | Database["public"]["Enums"]["disease_category"]
+            | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          notes?: string | null
+          provider_name?: string | null
+          record_date?: string | null
+          title: string
+          uploaded_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["record_category"] | null
+          description?: string | null
+          disease_category?:
+            | Database["public"]["Enums"]["disease_category"]
+            | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          notes?: string | null
+          provider_name?: string | null
+          record_date?: string | null
+          title?: string
+          uploaded_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_content: {
         Row: {
           id: string
@@ -128,6 +233,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          display_name: string | null
+          gender: string | null
+          id: string
+          location: string | null
+          phone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          gender?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          gender?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -164,6 +308,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      disease_category:
+        | "general"
+        | "cancer"
+        | "covid19"
+        | "diabetes"
+        | "heart_disease"
+        | "other"
+      record_category:
+        | "prescription"
+        | "lab_result"
+        | "imaging"
+        | "vaccination"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -292,6 +449,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      disease_category: [
+        "general",
+        "cancer",
+        "covid19",
+        "diabetes",
+        "heart_disease",
+        "other",
+      ],
+      record_category: [
+        "prescription",
+        "lab_result",
+        "imaging",
+        "vaccination",
+        "other",
+      ],
     },
   },
 } as const
