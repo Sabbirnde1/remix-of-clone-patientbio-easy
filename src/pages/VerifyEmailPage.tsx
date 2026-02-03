@@ -41,7 +41,7 @@ const VerifyEmailPage = () => {
           setStatus("success");
           // Redirect to dashboard after short delay
           setTimeout(() => {
-            navigate("/");
+            navigate("/dashboard");
           }, 2000);
         }
       }
@@ -53,7 +53,7 @@ const VerifyEmailPage = () => {
   // If user is already verified and logged in, redirect
   useEffect(() => {
     if (!loading && user?.email_confirmed_at) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [user, loading, navigate]);
 
