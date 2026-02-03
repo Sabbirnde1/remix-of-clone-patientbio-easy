@@ -57,15 +57,15 @@ const PrescriptionsPage = () => {
   const getCategoryBadgeColor = (category: string | null) => {
     switch (category) {
       case "prescription":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+        return "bg-primary/10 text-primary";
       case "lab_result":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
+        return "bg-secondary/10 text-secondary-foreground";
       case "imaging":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
+        return "bg-accent/10 text-accent-foreground";
       case "vaccination":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
+        return "bg-muted text-muted-foreground";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -123,27 +123,29 @@ const PrescriptionsPage = () => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-6">
-                {DISEASE_CATEGORIES.map((cat) => {
-                  const count = records.filter(
-                    (r) => r.disease_category === cat.value
-                  ).length;
-                  return (
-                    <TabsTrigger
-                      key={cat.value}
-                      value={cat.value}
-                      className="text-xs md:text-sm"
-                    >
-                      {cat.label}
-                      {count > 0 && (
-                        <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                          {count}
-                        </span>
-                      )}
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-6 mb-6">
+                  {DISEASE_CATEGORIES.map((cat) => {
+                    const count = records.filter(
+                      (r) => r.disease_category === cat.value
+                    ).length;
+                    return (
+                      <TabsTrigger
+                        key={cat.value}
+                        value={cat.value}
+                        className="text-xs sm:text-sm whitespace-nowrap"
+                      >
+                        {cat.label}
+                        {count > 0 && (
+                          <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                            {count}
+                          </span>
+                        )}
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </div>
 
               {DISEASE_CATEGORIES.map((cat) => (
                 <TabsContent key={cat.value} value={cat.value}>

@@ -102,7 +102,7 @@ const MyDoctorsPage = () => {
     <div className="space-y-6 max-w-4xl">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
@@ -114,12 +114,12 @@ const MyDoctorsPage = () => {
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleOpenAdd} className="bg-gradient-to-r from-primary to-secondary border-0">
+                <Button onClick={handleOpenAdd} className="bg-gradient-to-r from-primary to-secondary border-0 w-full sm:w-auto">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add Doctor
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                   <DialogHeader>
                     <DialogTitle>
@@ -142,7 +142,7 @@ const MyDoctorsPage = () => {
                         required
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="specialty">Specialty</Label>
                         <Input
@@ -162,7 +162,7 @@ const MyDoctorsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone</Label>
                         <Input

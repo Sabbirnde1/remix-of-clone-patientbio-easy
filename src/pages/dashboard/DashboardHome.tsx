@@ -193,7 +193,7 @@ const DashboardHome = () => {
                 >
                   <div className="flex items-center gap-3">
                     {item.completed ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
                     ) : (
                       <Circle className="h-5 w-5 text-muted-foreground" />
                     )}
