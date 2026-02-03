@@ -91,6 +91,75 @@ export type Database = {
         }
         Relationships: []
       }
+      admissions: {
+        Row: {
+          actual_discharge: string | null
+          admission_date: string
+          admission_reason: string | null
+          admitting_doctor_id: string
+          bed_id: string | null
+          created_at: string | null
+          diagnosis: string | null
+          discharge_notes: string | null
+          discharged_by: string | null
+          expected_discharge: string | null
+          hospital_id: string
+          id: string
+          patient_id: string
+          status: Database["public"]["Enums"]["admission_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_discharge?: string | null
+          admission_date?: string
+          admission_reason?: string | null
+          admitting_doctor_id: string
+          bed_id?: string | null
+          created_at?: string | null
+          diagnosis?: string | null
+          discharge_notes?: string | null
+          discharged_by?: string | null
+          expected_discharge?: string | null
+          hospital_id: string
+          id?: string
+          patient_id: string
+          status?: Database["public"]["Enums"]["admission_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_discharge?: string | null
+          admission_date?: string
+          admission_reason?: string | null
+          admitting_doctor_id?: string
+          bed_id?: string | null
+          created_at?: string | null
+          diagnosis?: string | null
+          discharge_notes?: string | null
+          discharged_by?: string | null
+          expected_discharge?: string | null
+          hospital_id?: string
+          id?: string
+          patient_id?: string
+          status?: Database["public"]["Enums"]["admission_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admissions_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admissions_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointment_date: string
@@ -146,6 +215,60 @@ export type Database = {
             columns: ["hospital_id"]
             isOneToOne: false
             referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds: {
+        Row: {
+          bed_number: string
+          bed_type: string | null
+          created_at: string | null
+          daily_rate: number | null
+          hospital_id: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["bed_status"] | null
+          updated_at: string | null
+          ward_id: string
+        }
+        Insert: {
+          bed_number: string
+          bed_type?: string | null
+          created_at?: string | null
+          daily_rate?: number | null
+          hospital_id: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["bed_status"] | null
+          updated_at?: string | null
+          ward_id: string
+        }
+        Update: {
+          bed_number?: string
+          bed_type?: string | null
+          created_at?: string | null
+          daily_rate?: number | null
+          hospital_id?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["bed_status"] | null
+          updated_at?: string | null
+          ward_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds_ward_id_fkey"
+            columns: ["ward_id"]
+            isOneToOne: false
+            referencedRelation: "wards"
             referencedColumns: ["id"]
           },
         ]
@@ -715,6 +838,189 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          category: Database["public"]["Enums"]["invoice_item_category"] | null
+          created_at: string | null
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          service_date: string | null
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["invoice_item_category"] | null
+          created_at?: string | null
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          service_date?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["invoice_item_category"] | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          service_date?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          admission_id: string | null
+          amount_paid: number | null
+          appointment_id: string | null
+          created_at: string | null
+          created_by: string | null
+          discount_amount: number | null
+          due_date: string | null
+          hospital_id: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          patient_id: string
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          subtotal: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          admission_id?: string | null
+          amount_paid?: number | null
+          appointment_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          hospital_id: string
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          patient_id: string
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          admission_id?: string | null
+          amount_paid?: number | null
+          appointment_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          hospital_id?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          patient_id?: string
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          hospital_id: string
+          id: string
+          invoice_id: string
+          notes: string | null
+          payment_date: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          received_by: string | null
+          transaction_ref: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          hospital_id: string
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          received_by?: string | null
+          transaction_ref?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          hospital_id?: string
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          received_by?: string | null
+          transaction_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prescriptions: {
         Row: {
           created_at: string | null
@@ -926,11 +1232,62 @@ export type Database = {
         }
         Relationships: []
       }
+      wards: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          floor: string | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          total_beds: number
+          type: Database["public"]["Enums"]["ward_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          floor?: string | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          total_beds?: number
+          type?: Database["public"]["Enums"]["ward_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          floor?: string | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          total_beds?: number
+          type?: Database["public"]["Enums"]["ward_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wards_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_invoice_number: {
+        Args: { p_hospital_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -948,6 +1305,7 @@ export type Database = {
       }
     }
     Enums: {
+      admission_status: "admitted" | "discharged" | "transferred"
       app_role: "admin" | "user" | "hospital_admin" | "doctor"
       appointment_status:
         | "scheduled"
@@ -955,6 +1313,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      bed_status: "available" | "occupied" | "maintenance" | "reserved"
       disease_category:
         | "general"
         | "cancer"
@@ -962,12 +1321,28 @@ export type Database = {
         | "diabetes"
         | "heart_disease"
         | "other"
+      invoice_item_category:
+        | "consultation"
+        | "bed_charge"
+        | "medication"
+        | "procedure"
+        | "lab_test"
+        | "other"
+      invoice_status: "draft" | "pending" | "partial" | "paid" | "cancelled"
+      payment_method: "cash" | "card" | "upi" | "bank_transfer" | "insurance"
       record_category:
         | "prescription"
         | "lab_result"
         | "imaging"
         | "vaccination"
         | "other"
+      ward_type:
+        | "general"
+        | "icu"
+        | "emergency"
+        | "maternity"
+        | "pediatric"
+        | "private"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1095,6 +1470,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admission_status: ["admitted", "discharged", "transferred"],
       app_role: ["admin", "user", "hospital_admin", "doctor"],
       appointment_status: [
         "scheduled",
@@ -1103,6 +1479,7 @@ export const Constants = {
         "cancelled",
         "no_show",
       ],
+      bed_status: ["available", "occupied", "maintenance", "reserved"],
       disease_category: [
         "general",
         "cancer",
@@ -1111,12 +1488,30 @@ export const Constants = {
         "heart_disease",
         "other",
       ],
+      invoice_item_category: [
+        "consultation",
+        "bed_charge",
+        "medication",
+        "procedure",
+        "lab_test",
+        "other",
+      ],
+      invoice_status: ["draft", "pending", "partial", "paid", "cancelled"],
+      payment_method: ["cash", "card", "upi", "bank_transfer", "insurance"],
       record_category: [
         "prescription",
         "lab_result",
         "imaging",
         "vaccination",
         "other",
+      ],
+      ward_type: [
+        "general",
+        "icu",
+        "emergency",
+        "maternity",
+        "pediatric",
+        "private",
       ],
     },
   },
