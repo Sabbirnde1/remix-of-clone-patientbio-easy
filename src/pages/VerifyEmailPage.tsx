@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Sparkles, Mail, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Sparkles, Mail, CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type VerificationStatus = "verifying" | "success" | "error" | "pending";
 
 const VerifyEmailPage = () => {
   const [status, setStatus] = useState<VerificationStatus>("pending");
   const [errorMessage, setErrorMessage] = useState("");
+  const [resendEmail, setResendEmail] = useState("");
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { toast } = useToast();
 
   // Handle email confirmation from URL token
   useEffect(() => {
@@ -50,6 +56,51 @@ const VerifyEmailPage = () => {
       navigate("/");
     }
   }, [user, loading, navigate]);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  const handleResendEmail = async () => {
+    if (!resendEmail.trim()) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to resend the verification link.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResending(true);
+    
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: resendEmail,
+      options: {
+        emailRedirectTo: `${window.location.origin}/verify-email`,
+      },
+    });
+
+    setIsResending(false);
+
+    if (error) {
+      toast({
+        title: "Failed to resend",
+        description: error.message || "Could not resend verification email. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      setResendCooldown(60);
+      toast({
+        title: "Email sent!",
+        description: "Check your inbox for the verification link.",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -124,13 +175,41 @@ const VerifyEmailPage = () => {
               <p className="text-muted-foreground mb-6">
                 We've sent a verification link to your email address. Please click the link to verify your account and continue.
               </p>
-              <div className="bg-muted/50 rounded-lg p-4 mb-6">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Didn't receive the email?</strong>
-                  <br />
-                  Check your spam folder or sign up again with the same email.
+              
+              {/* Resend Section */}
+              <div className="bg-muted/50 rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm font-medium mb-3">Didn't receive the email?</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleResendEmail}
+                    disabled={isResending || resendCooldown > 0}
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    {isResending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : resendCooldown > 0 ? (
+                      `${resendCooldown}s`
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        Resend
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Check your spam folder if you don't see it.
                 </p>
               </div>
+
               <Button asChild variant="outline" className="w-full">
                 <Link to="/auth">Back to Sign In</Link>
               </Button>
