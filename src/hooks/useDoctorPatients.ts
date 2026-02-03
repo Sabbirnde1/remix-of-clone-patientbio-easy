@@ -121,6 +121,76 @@ export const useUpdatePatientAccess = () => {
   });
 };
 
+interface PatientLookupResult {
+  found: boolean;
+  patient_id?: string;
+  display_name?: string;
+  gender?: string | null;
+  age?: number | null;
+  already_connected?: boolean;
+  has_inactive_access?: boolean;
+}
+
+export const useLookupPatientByCode = () => {
+  return useMutation({
+    mutationFn: async (patientCode: string): Promise<PatientLookupResult> => {
+      const { data, error } = await supabase.functions.invoke("lookup-patient-by-id", {
+        body: { patient_code: patientCode },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useGrantPatientAccess = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (patientId: string) => {
+      if (!user?.id) throw new Error("Not authenticated");
+
+      // Check for existing access record (might be inactive)
+      const { data: existing, error: checkError } = await supabase
+        .from("doctor_patient_access")
+        .select("id, is_active")
+        .eq("doctor_id", user.id)
+        .eq("patient_id", patientId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existing) {
+        // Reactivate existing record
+        const { error: updateError } = await supabase
+          .from("doctor_patient_access")
+          .update({ is_active: true, last_accessed_at: new Date().toISOString() })
+          .eq("id", existing.id);
+
+        if (updateError) throw updateError;
+        return { reactivated: true };
+      }
+
+      // Create new access record
+      const { error: insertError } = await supabase
+        .from("doctor_patient_access")
+        .insert({
+          doctor_id: user.id,
+          patient_id: patientId,
+          is_active: true,
+        });
+
+      if (insertError) throw insertError;
+      return { reactivated: false };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["doctor-patients"] });
+    },
+  });
+};
+
 export const useQuickRegisterPatient = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();

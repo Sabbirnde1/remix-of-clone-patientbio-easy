@@ -4,7 +4,6 @@ import { useDoctorPatients, useUpdatePatientAccess } from "@/hooks/useDoctorPati
 import { Hospital } from "@/types/hospital";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -14,14 +13,13 @@ import {
   User, 
   Calendar, 
   Clock, 
-  FileText,
-  Pill,
   Eye,
+  Pill,
   UserPlus
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import PatientDetailsDialog from "@/components/hospital/PatientDetailsDialog";
-import QuickPatientRegisterDialog from "@/components/hospital/QuickPatientRegisterDialog";
+import AddPatientDialog from "@/components/hospital/AddPatientDialog";
 
 interface OutletContext {
   hospital: Hospital;
@@ -35,7 +33,7 @@ export default function DoctorPatientsPage() {
   const updateAccess = useUpdatePatientAccess();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   const filteredPatients = patients?.filter((patient) => {
     const name = patient.patient_profile?.display_name?.toLowerCase() || "";
@@ -72,9 +70,9 @@ export default function DoctorPatientsPage() {
             Patients who have shared their health data with you
           </p>
         </div>
-        <Button onClick={() => setShowRegisterDialog(true)} className="gap-2">
+        <Button onClick={() => setShowAddDialog(true)} className="gap-2">
           <UserPlus className="h-4 w-4" />
-          Register Patient
+          Add Patient
         </Button>
       </div>
 
@@ -171,11 +169,11 @@ export default function DoctorPatientsPage() {
             <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="font-semibold text-lg mb-2">No Patients Yet</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto mb-4">
-              Register walk-in patients or wait for patients to share their health data with you via a sharing link.
+              Add patients using their Patient ID code. Patients can find their ID in their Patient Portal.
             </p>
-            <Button onClick={() => setShowRegisterDialog(true)} className="gap-2">
+            <Button onClick={() => setShowAddDialog(true)} className="gap-2">
               <UserPlus className="h-4 w-4" />
-              Register Your First Patient
+              Add Your First Patient
             </Button>
           </CardContent>
         </Card>
@@ -188,11 +186,10 @@ export default function DoctorPatientsPage() {
         onClose={() => setSelectedPatientId(null)}
       />
 
-      {/* Quick Patient Registration Dialog */}
-      <QuickPatientRegisterDialog
-        hospitalId={hospital.id}
-        open={showRegisterDialog}
-        onOpenChange={setShowRegisterDialog}
+      {/* Add Patient Dialog */}
+      <AddPatientDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
         onSuccess={(patientId) => setSelectedPatientId(patientId)}
       />
     </div>

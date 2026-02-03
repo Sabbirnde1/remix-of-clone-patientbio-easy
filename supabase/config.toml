@@ -1,1 +1,4 @@
 project_id = "wwolnohfqmihuokqqhpw"
+
+[functions.lookup-patient-by-id]
+verify_jwt = false
