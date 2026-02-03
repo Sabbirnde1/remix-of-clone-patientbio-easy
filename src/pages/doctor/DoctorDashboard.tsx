@@ -1,5 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useDoctorProfile } from "@/hooks/useDoctorProfile";
+import { useDoctorPatients } from "@/hooks/useDoctorPatients";
+import { useDoctorPrescriptions } from "@/hooks/usePrescriptions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +19,16 @@ import {
   Users,
   Pill,
   QrCode,
+  TrendingUp,
+  Calendar,
 } from "lucide-react";
+import { format } from "date-fns";
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
   const { data: profile } = useDoctorProfile();
+  const { data: patients } = useDoctorPatients(user?.id);
+  const { data: prescriptions } = useDoctorPrescriptions();
 
   const doctorId = user?.id?.substring(0, 8).toUpperCase() || "--------";
   const initials = profile?.full_name
@@ -30,6 +37,14 @@ const DoctorDashboard = () => {
     .join("")
     .toUpperCase()
     .slice(0, 2) || "DR";
+
+  // Calculate statistics
+  const totalPatients = patients?.length || 0;
+  const totalPrescriptions = prescriptions?.length || 0;
+  const activePrescriptions = prescriptions?.filter((rx) => rx.is_active)?.length || 0;
+
+  // Get recent patients (last 5)
+  const recentPatients = patients?.slice(0, 5) || [];
 
   const quickActions = [
     {
@@ -55,6 +70,30 @@ const DoctorDashboard = () => {
     },
   ];
 
+  const stats = [
+    {
+      title: "Total Patients",
+      value: totalPatients,
+      icon: Users,
+      color: "text-blue-600",
+      bgColor: "bg-blue-500/10",
+    },
+    {
+      title: "Total Prescriptions",
+      value: totalPrescriptions,
+      icon: Pill,
+      color: "text-green-600",
+      bgColor: "bg-green-500/10",
+    },
+    {
+      title: "Active Prescriptions",
+      value: activePrescriptions,
+      icon: TrendingUp,
+      color: "text-amber-600",
+      bgColor: "bg-amber-500/10",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -63,7 +102,7 @@ const DoctorDashboard = () => {
             Welcome, {profile?.full_name?.split(" ")[0] || "Doctor"}!
           </h1>
           <p className="text-muted-foreground">
-            Here's an overview of your profile
+            Here's an overview of your practice
           </p>
         </div>
         <Button asChild>
@@ -72,6 +111,25 @@ const DoctorDashboard = () => {
             Edit Profile
           </Link>
         </Button>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {stats.map((stat) => (
+          <Card key={stat.title}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.title}</p>
+                  <p className="text-3xl font-bold mt-1">{stat.value}</p>
+                </div>
+                <div className={`h-12 w-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Profile Card */}
@@ -145,14 +203,6 @@ const DoctorDashboard = () => {
 
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Award className="h-4 w-4" />
-                  Qualification
-                </p>
-                <p className="font-medium">{profile?.qualification || "—"}</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Experience
                 </p>
@@ -162,26 +212,57 @@ const DoctorDashboard = () => {
                     : "—"}
                 </p>
               </div>
-
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Consultation Fee</p>
-                <p className="font-medium">
-                  {profile?.consultation_fee
-                    ? `৳${profile.consultation_fee}`
-                    : "—"}
-                </p>
-              </div>
-
-              {profile?.bio && (
-                <div className="space-y-1 md:col-span-2">
-                  <p className="text-sm text-muted-foreground">Bio</p>
-                  <p className="text-sm">{profile.bio}</p>
-                </div>
-              )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Recent Patients */}
+      {recentPatients.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Recent Patients
+            </CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/doctor/patients">View All</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentPatients.map((patient: any) => (
+                <div
+                  key={patient.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {patient.display_name?.[0]?.toUpperCase() || "P"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {patient.display_name || "Unknown Patient"}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Connected {patient.granted_at
+                          ? format(new Date(patient.granted_at), "MMM d, yyyy")
+                          : "Recently"}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant={patient.is_active ? "default" : "secondary"}>
+                    {patient.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <div>

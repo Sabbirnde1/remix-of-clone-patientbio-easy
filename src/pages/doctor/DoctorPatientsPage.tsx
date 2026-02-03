@@ -25,7 +25,11 @@ import {
   User,
   CheckCircle,
   AlertCircle,
+  FileText,
+  Pill,
 } from "lucide-react";
+import { CreatePrescriptionDialog } from "@/components/doctor/CreatePrescriptionDialog";
+import { DoctorPatientDetailsDialog } from "@/components/doctor/DoctorPatientDetailsDialog";
 
 const DoctorPatientsPage = () => {
   const { user } = useAuth();
@@ -35,6 +39,11 @@ const DoctorPatientsPage = () => {
   const [patientCode, setPatientCode] = useState("");
   const [lookupResult, setLookupResult] = useState<any>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
+  
+  // Dialog states for patient details and prescriptions
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [prescriptionDialogOpen, setPrescriptionDialogOpen] = useState(false);
 
   const lookupPatient = useLookupPatientByCode();
   const grantAccess = useGrantPatientAccess();
@@ -263,10 +272,52 @@ const DoctorPatientsPage = () => {
                     {patient.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedPatient(patient);
+                      setDetailsDialogOpen(true);
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    View Records
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setSelectedPatient(patient);
+                      setPrescriptionDialogOpen(true);
+                    }}
+                  >
+                    <Pill className="h-4 w-4 mr-1" />
+                    Prescribe
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Patient Details Dialog */}
+      <DoctorPatientDetailsDialog
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        patient={selectedPatient}
+      />
+
+      {/* Create Prescription Dialog */}
+      {selectedPatient && (
+        <CreatePrescriptionDialog
+          open={prescriptionDialogOpen}
+          onOpenChange={setPrescriptionDialogOpen}
+          patient={{
+            patient_id: selectedPatient.patient_id,
+            display_name: selectedPatient.display_name,
+          }}
+        />
       )}
     </div>
   );
