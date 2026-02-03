@@ -69,61 +69,38 @@ const ShareViewPage = () => {
       }
 
       try {
-        // Fetch token details
-        const { data: tokenData, error: tokenError } = await supabase
-          .from("access_tokens")
-          .select("*")
-          .eq("token", token)
-          .single();
+        // Call edge function to fetch patient data securely
+        const { data, error } = await supabase.functions.invoke("get-shared-patient-data", {
+          body: { token },
+        });
 
-        if (tokenError || !tokenData) {
+        if (error) {
+          console.error("Edge function error:", error);
           setPageState("invalid");
           return;
         }
 
-        // Check if revoked
-        if (tokenData.is_revoked) {
-          setPageState("revoked");
+        // Handle error responses from the edge function
+        if (data.error) {
+          if (data.error === "revoked") {
+            setPageState("revoked");
+          } else if (data.error === "expired") {
+            setPageState("expired");
+            setExpiresAt(data.expires_at);
+          } else {
+            setPageState("invalid");
+          }
           return;
         }
 
-        // Check if expired
-        if (new Date(tokenData.expires_at) < new Date()) {
-          setPageState("expired");
-          setExpiresAt(tokenData.expires_at);
-          return;
-        }
-
-        setExpiresAt(tokenData.expires_at);
-
-        // Update access tracking
-        await supabase
-          .from("access_tokens")
-          .update({
-            accessed_at: new Date().toISOString(),
-            access_count: (tokenData.access_count || 0) + 1,
-          })
-          .eq("id", tokenData.id);
-
-        // Fetch patient data using user_id from token
-        const userId = tokenData.user_id;
-
-        const [profileRes, healthRes, recordsRes] = await Promise.all([
-          supabase.from("user_profiles").select("*").eq("user_id", userId).single(),
-          supabase.from("health_data").select("*").eq("user_id", userId).single(),
-          supabase
-            .from("health_records")
-            .select("id, title, category, record_date, provider_name")
-            .eq("user_id", userId)
-            .order("record_date", { ascending: false })
-            .limit(10),
-        ]);
-
-        setProfile(profileRes.data);
-        setHealthData(healthRes.data);
-        setRecords(recordsRes.data || []);
+        // Success - set all data
+        setExpiresAt(data.expires_at);
+        setProfile(data.profile);
+        setHealthData(data.healthData);
+        setRecords(data.records || []);
         setPageState("valid");
-      } catch {
+      } catch (err) {
+        console.error("Error fetching shared data:", err);
         setPageState("invalid");
       }
     };

@@ -2,3 +2,6 @@ project_id = "qgvvlulywdhjbgpqkunb"
 
 [functions.admin-users]
 verify_jwt = false
+
+[functions.get-shared-patient-data]
+verify_jwt = false
