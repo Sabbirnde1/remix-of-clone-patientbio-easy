@@ -1,20 +1,24 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDoctorPrescriptions } from "@/hooks/usePrescriptions";
+import { useDoctorPrescriptions, Prescription } from "@/hooks/usePrescriptions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Search, Pill, Loader2, Calendar, User, FileText } from "lucide-react";
+import { Search, Pill, Loader2, Calendar, User, FileText, Eye } from "lucide-react";
+import { PrescriptionViewDialog } from "@/components/doctor/PrescriptionViewDialog";
 
 const DoctorPrescriptionsPage = () => {
   const { user } = useAuth();
   const { data: prescriptions, isLoading } = useDoctorPrescriptions();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
-  const filteredPrescriptions = prescriptions?.filter((rx: any) =>
+  const filteredPrescriptions = prescriptions?.filter((rx: Prescription) =>
     rx.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    rx.medications?.some((med: any) =>
+    rx.medications?.some((med) =>
       med.name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
@@ -56,7 +60,7 @@ const DoctorPrescriptionsPage = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredPrescriptions?.map((rx: any) => (
+          {filteredPrescriptions?.map((rx: Prescription) => (
             <Card key={rx.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -76,9 +80,22 @@ const DoctorPrescriptionsPage = () => {
                       </span>
                     </CardDescription>
                   </div>
-                  <Badge variant={rx.is_active ? "default" : "secondary"}>
-                    {rx.is_active ? "Active" : "Completed"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedPrescription(rx);
+                        setViewDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View/Print
+                    </Button>
+                    <Badge variant={rx.is_active ? "default" : "secondary"}>
+                      {rx.is_active ? "Active" : "Completed"}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
@@ -88,7 +105,7 @@ const DoctorPrescriptionsPage = () => {
                       Medications:
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {rx.medications.map((med: any, index: number) => (
+                      {rx.medications.map((med, index: number) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           <Pill className="h-3 w-3 mr-1" />
                           {med.name}
@@ -116,6 +133,13 @@ const DoctorPrescriptionsPage = () => {
           ))}
         </div>
       )}
+
+      {/* View/Print Dialog */}
+      <PrescriptionViewDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        prescription={selectedPrescription}
+      />
     </div>
   );
 };
