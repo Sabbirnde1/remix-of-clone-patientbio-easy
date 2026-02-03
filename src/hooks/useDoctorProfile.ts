@@ -36,15 +36,29 @@ export const useCreateDoctorProfile = () => {
     ) => {
       if (!user?.id) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("doctor_profiles").insert({
+      // Create the doctor profile
+      const { error: profileError } = await supabase.from("doctor_profiles").insert({
         ...profileData,
         user_id: user.id,
       });
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Auto-assign "doctor" role to user_roles table
+      const { error: roleError } = await supabase.from("user_roles").insert({
+        user_id: user.id,
+        role: "doctor",
+      });
+
+      // Ignore if role already exists (might fail with unique constraint)
+      if (roleError && !roleError.message.includes("duplicate")) {
+        console.warn("Could not assign doctor role:", roleError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctor-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["is-doctor"] });
+      queryClient.invalidateQueries({ queryKey: ["user-role"] });
       toast.success("Doctor profile created successfully!");
     },
     onError: (error) => {

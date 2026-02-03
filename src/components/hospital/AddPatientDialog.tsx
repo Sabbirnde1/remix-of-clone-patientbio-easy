@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLookupPatientByCode, useGrantPatientAccess } from "@/hooks/useDoctorPatients";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { Search, User, Loader2, UserPlus, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -19,6 +20,7 @@ export default function AddPatientDialog({
   onOpenChange,
   onSuccess,
 }: AddPatientDialogProps) {
+  const { user } = useAuth();
   const [patientCode, setPatientCode] = useState("");
   const lookupMutation = useLookupPatientByCode();
   const grantAccessMutation = useGrantPatientAccess();
@@ -37,9 +39,9 @@ export default function AddPatientDialog({
   };
 
   const handleAddPatient = () => {
-    if (!lookupMutation.data?.patient_id) return;
+    if (!lookupMutation.data?.patient_id || !user?.id) return;
 
-    grantAccessMutation.mutate(lookupMutation.data.patient_id, {
+    grantAccessMutation.mutate({ doctorId: user.id, patientId: lookupMutation.data.patient_id }, {
       onSuccess: (result) => {
         toast({
           title: result.reactivated ? "Access Restored" : "Patient Added",
