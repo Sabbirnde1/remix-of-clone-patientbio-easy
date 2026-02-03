@@ -1,13 +1,13 @@
 
 
-# Appointment Scheduling Implementation Plan
+# Hospital Dashboard Tier 2 Features Implementation Plan
 
 ## Overview
 
-This plan implements a comprehensive appointment scheduling system for the Hospital Dashboard that allows:
-- **Patients** to book appointments with hospital doctors
-- **Doctors** to manage their availability and view scheduled appointments
-- **Hospital admins** to oversee all appointments across the hospital
+This plan implements two important "Should Have" features for the Hospital Dashboard:
+
+1. **Billing & Invoicing** - Generate bills for consultations/services, track payment status, view payment history
+2. **In-Patient Management** - Manage admissions, allocate beds/wards, track patient stays, handle discharge
 
 ---
 
@@ -15,132 +15,204 @@ This plan implements a comprehensive appointment scheduling system for the Hospi
 
 ### New Tables
 
-#### 1. `doctor_availability` - Stores doctor working hours and availability patterns
+#### 1. `wards` - Hospital wards/departments with bed capacity
 
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
-| doctor_id | UUID | References auth.users(id) |
 | hospital_id | UUID | References hospitals(id) |
-| day_of_week | INTEGER | 0=Sunday, 1=Monday, etc. |
-| start_time | TIME | Start of availability window |
-| end_time | TIME | End of availability window |
-| slot_duration_minutes | INTEGER | Default: 30 |
-| is_active | BOOLEAN | Whether this schedule is active |
+| name | TEXT | Ward name (e.g., "General Ward A", "ICU") |
+| type | TEXT | Ward type: general, icu, emergency, maternity, pediatric, private |
+| floor | TEXT | Floor/building location |
+| total_beds | INTEGER | Total number of beds |
+| description | TEXT | Optional description |
+| is_active | BOOLEAN | Whether ward is operational |
 | created_at | TIMESTAMP | |
 | updated_at | TIMESTAMP | |
 
-#### 2. `appointments` - Stores actual appointments
+#### 2. `beds` - Individual beds within wards
 
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
-| patient_id | UUID | References auth.users(id) |
-| doctor_id | UUID | References auth.users(id) |
+| ward_id | UUID | References wards(id) |
 | hospital_id | UUID | References hospitals(id) |
-| appointment_date | DATE | Date of appointment |
-| start_time | TIME | Start time |
-| end_time | TIME | End time |
-| status | appointment_status | ENUM: scheduled, confirmed, completed, cancelled, no_show |
-| reason | TEXT | Reason for visit |
-| notes | TEXT | Doctor/admin notes |
-| cancelled_by | UUID | Who cancelled (if cancelled) |
-| cancelled_at | TIMESTAMP | When cancelled |
+| bed_number | TEXT | Bed identifier (e.g., "A-101") |
+| bed_type | TEXT | standard, electric, icu, pediatric |
+| daily_rate | DECIMAL | Daily charge for this bed |
+| status | TEXT | available, occupied, maintenance, reserved |
+| notes | TEXT | Optional notes |
 | created_at | TIMESTAMP | |
 | updated_at | TIMESTAMP | |
 
-#### 3. `doctor_time_off` - Stores doctor leave/unavailable periods
+#### 3. `admissions` - Patient admission records
 
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
-| doctor_id | UUID | References auth.users(id) |
 | hospital_id | UUID | References hospitals(id) |
-| start_date | DATE | Start of time off |
-| end_date | DATE | End of time off |
-| reason | TEXT | Optional reason |
+| patient_id | UUID | Patient user ID |
+| bed_id | UUID | References beds(id) |
+| admitting_doctor_id | UUID | Doctor who admitted |
+| admission_date | TIMESTAMP | When patient was admitted |
+| expected_discharge | DATE | Estimated discharge date |
+| actual_discharge | TIMESTAMP | When actually discharged |
+| admission_reason | TEXT | Reason for admission |
+| diagnosis | TEXT | Initial diagnosis |
+| status | TEXT | admitted, discharged, transferred |
+| discharge_notes | TEXT | Discharge summary |
+| discharged_by | UUID | Staff who discharged |
+| created_at | TIMESTAMP | |
+| updated_at | TIMESTAMP | |
+
+#### 4. `invoices` - Patient billing invoices
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| hospital_id | UUID | References hospitals(id) |
+| patient_id | UUID | Patient user ID |
+| admission_id | UUID | References admissions(id) - nullable for OPD |
+| appointment_id | UUID | References appointments(id) - nullable |
+| invoice_number | TEXT | Unique invoice number (auto-generated) |
+| invoice_date | DATE | Invoice creation date |
+| due_date | DATE | Payment due date |
+| subtotal | DECIMAL | Sum of all items before tax |
+| tax_amount | DECIMAL | Tax amount |
+| discount_amount | DECIMAL | Any discounts applied |
+| total_amount | DECIMAL | Final amount |
+| amount_paid | DECIMAL | Amount already paid |
+| status | TEXT | draft, pending, partial, paid, cancelled |
+| notes | TEXT | Invoice notes |
+| created_by | UUID | Staff who created |
+| created_at | TIMESTAMP | |
+| updated_at | TIMESTAMP | |
+
+#### 5. `invoice_items` - Line items on invoices
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| invoice_id | UUID | References invoices(id) |
+| description | TEXT | Item description |
+| category | TEXT | consultation, bed_charge, medication, procedure, lab_test, other |
+| quantity | INTEGER | Number of units |
+| unit_price | DECIMAL | Price per unit |
+| total_price | DECIMAL | quantity * unit_price |
+| service_date | DATE | When service was provided |
+| created_at | TIMESTAMP | |
+
+#### 6. `payments` - Payment transactions
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| invoice_id | UUID | References invoices(id) |
+| hospital_id | UUID | References hospitals(id) |
+| amount | DECIMAL | Payment amount |
+| payment_method | TEXT | cash, card, upi, bank_transfer, insurance |
+| payment_date | TIMESTAMP | When payment was made |
+| transaction_ref | TEXT | External transaction reference |
+| notes | TEXT | Payment notes |
+| received_by | UUID | Staff who received payment |
 | created_at | TIMESTAMP | |
 
 ---
 
 ## User Interface Components
 
-### Hospital Dashboard (Doctors/Admins)
+### 1. Billing & Invoicing Section
 
-#### 1. Appointments Page (`/hospital/:hospitalId/appointments`)
-
-```text
-+-----------------------------------------------+
-|  Appointments                    [+ Add Appt] |
-+-----------------------------------------------+
-|  [Today] [Week] [Month]     [Filter: Doctor ▼]|
-+-----------------------------------------------+
-|                                               |
-|  Calendar View / List View Toggle             |
-|                                               |
-|  +------------------------------------------+ |
-|  | 9:00 AM | Dr. Smith | John Doe | Checkup | |
-|  | 9:30 AM | Dr. Smith | Jane Roe | Follow  | |
-|  | 10:00AM | Dr. Jones | Bob Lee  | Consult | |
-|  +------------------------------------------+ |
-+-----------------------------------------------+
-```
-
-Features:
-- Calendar view with day/week/month toggle
-- Filter by doctor (for admins)
-- Quick status updates (confirm, complete, cancel)
-- Click to view appointment details
-
-#### 2. Doctor Availability Page (`/hospital/:hospitalId/availability`)
+#### Invoices Page (`/hospital/:hospitalId/billing`)
 
 ```text
-+-----------------------------------------------+
-|  Manage Availability                          |
-+-----------------------------------------------+
-|  Weekly Schedule:                             |
-|  +------------------------------------------+ |
-|  | Monday    | 09:00 - 17:00 | 30 min slots | |
-|  | Tuesday   | 09:00 - 17:00 | 30 min slots | |
-|  | Wednesday | 09:00 - 13:00 | 30 min slots | |
-|  | Thursday  | 09:00 - 17:00 | 30 min slots | |
-|  | Friday    | 09:00 - 15:00 | 30 min slots | |
-|  +------------------------------------------+ |
-+-----------------------------------------------+
-|  Time Off:                         [+ Add]    |
-|  +------------------------------------------+ |
-|  | Feb 14, 2026 | Personal Day              | |
-|  | Mar 1-5, 2026| Conference                | |
-|  +------------------------------------------+ |
-+-----------------------------------------------+
++-------------------------------------------------------+
+|  Billing & Invoices                    [+ New Invoice] |
++-------------------------------------------------------+
+|  [All] [Pending] [Paid] [Overdue]    [Search...] |
++-------------------------------------------------------+
+|  Invoice List:                                         |
+|  +---------------------------------------------------+ |
+|  | INV-2026-001 | John Doe | Rs. 5,000 | Paid | ✓    | |
+|  | INV-2026-002 | Jane Roe | Rs. 12,500 | Pending    | |
+|  | INV-2026-003 | Bob Lee  | Rs. 3,200 | Partial    | |
+|  +---------------------------------------------------+ |
++-------------------------------------------------------+
 ```
 
-### Patient Dashboard
+#### Create Invoice Dialog
 
-#### 1. Book Appointment Page (`/dashboard/appointments`)
+- Select patient (from hospital's patients or search)
+- Link to admission/appointment (optional)
+- Add line items (services, bed charges, medications)
+- Apply discounts/tax
+- Preview and save
+
+#### Invoice Detail View
+
+- Full invoice with patient details
+- Item breakdown
+- Payment history
+- Actions: Record payment, Print, Send, Cancel
+
+### 2. In-Patient Management Section
+
+#### Ward & Bed Management Page (`/hospital/:hospitalId/wards`)
 
 ```text
-+-----------------------------------------------+
-|  Book Appointment                             |
-+-----------------------------------------------+
-|  Select Hospital:    [Hospital ABC       ▼]  |
-|  Select Doctor:      [Dr. Smith - Cardio ▼]  |
-|  Select Date:        [Calendar Picker]        |
-+-----------------------------------------------+
-|  Available Slots for Feb 15, 2026:            |
-|  +------------------------------------------+ |
-|  | [9:00 AM] [9:30 AM] [10:00 AM] [10:30 AM] ||
-|  | [2:00 PM] [2:30 PM] [3:00 PM] [3:30 PM]  ||
-|  +------------------------------------------+ |
-+-----------------------------------------------+
-|  Reason for Visit: [                        ] |
-|  [Book Appointment]                           |
-+-----------------------------------------------+
++-------------------------------------------------------+
+|  Wards & Beds                              [+ Add Ward] |
++-------------------------------------------------------+
+|  Ward Overview:                                         |
+|  +---------------------------------------------------+ |
+|  | General Ward A  | 20 beds | 15 occupied | 5 avail | |
+|  | ICU             | 8 beds  | 6 occupied  | 2 avail | |
+|  | Private Rooms   | 10 beds | 8 occupied  | 2 avail | |
+|  +---------------------------------------------------+ |
++-------------------------------------------------------+
+|  Bed Map (click ward to expand):                       |
+|  +---------------------------------------------------+ |
+|  | [A1 ✓] [A2 ●] [A3 ●] [A4 ✓] [A5 🔧] [A6 ●]       | |
+|  | ✓ Available  ● Occupied  🔧 Maintenance           | |
+|  +---------------------------------------------------+ |
++-------------------------------------------------------+
 ```
 
-#### 2. My Appointments View
+#### Admissions Page (`/hospital/:hospitalId/admissions`)
 
-Shows patient's upcoming and past appointments with ability to cancel.
+```text
++-------------------------------------------------------+
+|  In-Patient Admissions                   [+ New Admit] |
++-------------------------------------------------------+
+|  [Current] [Discharged Today] [All]     [Search...]   |
++-------------------------------------------------------+
+|  Current Admissions:                                   |
+|  +---------------------------------------------------+ |
+|  | John Doe | Ward A, Bed 3 | Dr. Smith | Day 3      | |
+|  |   Diagnosis: Pneumonia | Expected: Feb 10         | |
+|  |   [View] [Transfer Bed] [Discharge]               | |
+|  +---------------------------------------------------+ |
+|  | Jane Roe | ICU, Bed 2 | Dr. Jones | Day 1         | |
+|  |   Diagnosis: Post-surgery | Expected: Feb 12      | |
+|  |   [View] [Transfer Bed] [Discharge]               | |
+|  +---------------------------------------------------+ |
++-------------------------------------------------------+
+```
+
+#### Admission Dialog
+
+- Select patient
+- Select available bed
+- Assign doctor
+- Enter admission reason/diagnosis
+- Set expected discharge date
+
+#### Discharge Dialog
+
+- Discharge summary
+- Final diagnosis
+- Auto-generate invoice for bed charges
+- Print discharge summary
 
 ---
 
@@ -151,182 +223,180 @@ Shows patient's upcoming and past appointments with ability to cancel.
 ```text
 src/
 ├── hooks/
-│   ├── useAppointments.ts          # CRUD for appointments
-│   ├── useDoctorAvailability.ts    # Manage doctor schedules
-│   └── useTimeSlots.ts             # Calculate available slots
-├── pages/
-│   ├── hospital/
-│   │   ├── HospitalAppointmentsPage.tsx
-│   │   └── DoctorAvailabilityPage.tsx
-│   └── dashboard/
-│       └── AppointmentsPage.tsx
-├── components/
-│   ├── appointments/
-│   │   ├── AppointmentCalendar.tsx
-│   │   ├── AppointmentCard.tsx
-│   │   ├── BookAppointmentDialog.tsx
-│   │   ├── AvailabilityEditor.tsx
-│   │   ├── TimeSlotPicker.tsx
-│   │   └── AppointmentDetailsDialog.tsx
-│   └── hospital/
-│       └── (existing, add sidebar item)
-│   └── dashboard/
-│       └── (existing, add sidebar item)
+│   ├── useWards.ts              # Ward & bed management
+│   ├── useAdmissions.ts         # In-patient admissions
+│   ├── useInvoices.ts           # Billing & invoices
+│   └── usePayments.ts           # Payment tracking
+├── pages/hospital/
+│   ├── HospitalBillingPage.tsx  # Invoices list & management
+│   ├── HospitalWardsPage.tsx    # Ward & bed management
+│   └── HospitalAdmissionsPage.tsx # In-patient admissions
+├── components/hospital/
+│   ├── CreateInvoiceDialog.tsx  # Create/edit invoice
+│   ├── InvoiceCard.tsx          # Invoice list item
+│   ├── InvoiceDetailDialog.tsx  # Full invoice view
+│   ├── RecordPaymentDialog.tsx  # Record payment
+│   ├── WardCard.tsx             # Ward overview card
+│   ├── BedGrid.tsx              # Visual bed map
+│   ├── AddWardDialog.tsx        # Create/edit ward
+│   ├── AddBedDialog.tsx         # Create/edit bed
+│   ├── AdmissionCard.tsx        # Admission list item
+│   ├── AdmitPatientDialog.tsx   # New admission
+│   ├── DischargeDialog.tsx      # Discharge patient
+│   └── TransferBedDialog.tsx    # Transfer to different bed
 ```
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/App.tsx` | Add new routes for appointments |
-| `src/components/hospital/HospitalSidebar.tsx` | Add "Appointments" and "Availability" links |
-| `src/components/dashboard/DashboardSidebar.tsx` | Add "Appointments" link |
-| `src/types/hospital.ts` | Add appointment type definitions |
+| `src/App.tsx` | Add routes for billing, wards, admissions |
+| `src/components/hospital/HospitalSidebar.tsx` | Add "Billing", "Wards", "Admissions" links |
+| `src/types/hospital.ts` | Add new type definitions |
 
 ---
 
 ## Implementation Phases
 
 ### Phase 1: Database Setup
-1. Create `appointment_status` enum
-2. Create `doctor_availability` table with RLS
-3. Create `appointments` table with RLS
-4. Create `doctor_time_off` table with RLS
-5. Add appropriate indexes for performance
+1. Create all 6 new tables with appropriate columns
+2. Add RLS policies for each table
+3. Create indexes for performance
+4. Add invoice number auto-generation function
 
-### Phase 2: Doctor Availability (Hospital Side)
-1. Create `useDoctorAvailability` hook
-2. Build `AvailabilityEditor` component
-3. Create `DoctorAvailabilityPage`
+### Phase 2: Ward & Bed Management
+1. Create `useWards` hook with CRUD operations
+2. Build ward and bed UI components
+3. Create `HospitalWardsPage`
 4. Add sidebar navigation
 
-### Phase 3: Appointment Management (Hospital Side)
-1. Create `useAppointments` hook
-2. Build `AppointmentCalendar` component
-3. Create `HospitalAppointmentsPage`
-4. Add status management (confirm, complete, cancel)
-5. Add sidebar navigation
+### Phase 3: In-Patient Admissions
+1. Create `useAdmissions` hook
+2. Build admission UI components
+3. Create `HospitalAdmissionsPage`
+4. Implement admission workflow (admit, transfer, discharge)
+5. Auto-update bed status on admission/discharge
 
-### Phase 4: Patient Booking (Patient Side)
-1. Create `useTimeSlots` hook to calculate availability
-2. Build `TimeSlotPicker` component
-3. Build `BookAppointmentDialog`
-4. Create patient `AppointmentsPage`
-5. Add sidebar navigation
+### Phase 4: Billing & Invoicing
+1. Create `useInvoices` and `usePayments` hooks
+2. Build invoice creation and viewing components
+3. Create `HospitalBillingPage`
+4. Implement invoice generation from admissions
+5. Add payment recording functionality
 
 ---
 
 ## Technical Details
 
-### RLS Policies
+### RLS Policies Summary
 
-#### doctor_availability
-- Doctors can manage their own availability
-- Hospital staff can view availability for their hospital
-- Patients can view availability for booking purposes
+#### wards, beds
+- Hospital admins can manage (full CRUD)
+- Hospital staff can view
 
-#### appointments
-- Patients can view/create/cancel their own appointments
-- Doctors can view/update appointments where they are the doctor
-- Hospital admins can manage all appointments at their hospital
+#### admissions
+- Doctors can create/update admissions
+- Hospital staff can view all admissions at their hospital
+- Hospital admins can manage all
 
-#### doctor_time_off
-- Doctors can manage their own time off
-- Hospital admins can view time off for their doctors
+#### invoices, invoice_items, payments
+- Hospital admins and designated billing staff can manage
+- Hospital staff can view
+- Patients can view their own invoices (future enhancement)
 
-### Available Slot Calculation Logic
+### Invoice Number Generation
 
-```typescript
-function getAvailableSlots(
-  doctorId: string,
-  hospitalId: string,
-  date: Date
-): TimeSlot[] {
-  // 1. Get doctor's availability for that day of week
-  // 2. Exclude time off periods
-  // 3. Get existing appointments for that date
-  // 4. Calculate available slots based on slot_duration_minutes
-  // 5. Return array of available start times
-}
+```sql
+CREATE OR REPLACE FUNCTION generate_invoice_number(hospital_id UUID)
+RETURNS TEXT AS $$
+DECLARE
+  year_part TEXT;
+  seq_num INTEGER;
+  invoice_num TEXT;
+BEGIN
+  year_part := to_char(CURRENT_DATE, 'YYYY');
+  
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(invoice_number FROM '\d+$') AS INTEGER)
+  ), 0) + 1
+  INTO seq_num
+  FROM invoices
+  WHERE invoices.hospital_id = generate_invoice_number.hospital_id
+    AND invoice_number LIKE 'INV-' || year_part || '-%';
+  
+  invoice_num := 'INV-' || year_part || '-' || LPAD(seq_num::TEXT, 4, '0');
+  
+  RETURN invoice_num;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Bed Status Auto-Update Trigger
+
+```sql
+CREATE OR REPLACE FUNCTION update_bed_status_on_admission()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' AND NEW.status = 'admitted' THEN
+    UPDATE beds SET status = 'occupied' WHERE id = NEW.bed_id;
+  ELSIF TG_OP = 'UPDATE' THEN
+    IF OLD.status = 'admitted' AND NEW.status = 'discharged' THEN
+      UPDATE beds SET status = 'available' WHERE id = OLD.bed_id;
+    ELSIF OLD.bed_id != NEW.bed_id THEN
+      UPDATE beds SET status = 'available' WHERE id = OLD.bed_id;
+      UPDATE beds SET status = 'occupied' WHERE id = NEW.bed_id;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
 ### Database Migration SQL Preview
 
 ```sql
--- Create appointment status enum
-CREATE TYPE appointment_status AS ENUM (
-  'scheduled',
-  'confirmed',
-  'completed',
-  'cancelled',
-  'no_show'
+-- Ward types enum
+CREATE TYPE ward_type AS ENUM (
+  'general', 'icu', 'emergency', 'maternity', 'pediatric', 'private'
 );
 
--- Create doctor_availability table
-CREATE TABLE doctor_availability (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  doctor_id UUID NOT NULL,
-  hospital_id UUID REFERENCES hospitals(id) ON DELETE CASCADE,
-  day_of_week INTEGER NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 6),
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  slot_duration_minutes INTEGER NOT NULL DEFAULT 30,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  CONSTRAINT valid_time_range CHECK (end_time > start_time),
-  UNIQUE(doctor_id, hospital_id, day_of_week)
+-- Bed status enum
+CREATE TYPE bed_status AS ENUM (
+  'available', 'occupied', 'maintenance', 'reserved'
 );
 
--- Create appointments table
-CREATE TABLE appointments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  patient_id UUID NOT NULL,
-  doctor_id UUID NOT NULL,
-  hospital_id UUID REFERENCES hospitals(id) ON DELETE CASCADE,
-  appointment_date DATE NOT NULL,
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  status appointment_status DEFAULT 'scheduled',
-  reason TEXT,
-  notes TEXT,
-  cancelled_by UUID,
-  cancelled_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+-- Admission status enum
+CREATE TYPE admission_status AS ENUM (
+  'admitted', 'discharged', 'transferred'
 );
 
--- Create doctor_time_off table
-CREATE TABLE doctor_time_off (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  doctor_id UUID NOT NULL,
-  hospital_id UUID REFERENCES hospitals(id) ON DELETE CASCADE,
-  start_date DATE NOT NULL,
-  end_date DATE NOT NULL,
-  reason TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  CONSTRAINT valid_date_range CHECK (end_date >= start_date)
+-- Invoice status enum
+CREATE TYPE invoice_status AS ENUM (
+  'draft', 'pending', 'partial', 'paid', 'cancelled'
 );
 
--- Enable RLS
-ALTER TABLE doctor_availability ENABLE ROW LEVEL SECURITY;
-ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE doctor_time_off ENABLE ROW LEVEL SECURITY;
+-- Invoice item categories
+CREATE TYPE invoice_item_category AS ENUM (
+  'consultation', 'bed_charge', 'medication', 'procedure', 'lab_test', 'other'
+);
 
--- Add indexes for performance
-CREATE INDEX idx_appointments_doctor_date ON appointments(doctor_id, appointment_date);
-CREATE INDEX idx_appointments_patient ON appointments(patient_id);
-CREATE INDEX idx_availability_doctor ON doctor_availability(doctor_id, hospital_id);
+-- Payment methods
+CREATE TYPE payment_method AS ENUM (
+  'cash', 'card', 'upi', 'bank_transfer', 'insurance'
+);
+
+-- Create tables (wards, beds, admissions, invoices, invoice_items, payments)
+-- with appropriate foreign keys and constraints...
 ```
 
 ---
 
 ## Security Considerations
 
-1. **Booking Validation**: Ensure appointment slots are actually available before confirming
-2. **Double-booking Prevention**: Use database constraints or transactions
-3. **Authorization**: Verify user has access to the hospital before booking
-4. **Rate Limiting**: Consider limiting appointment creation frequency
+1. **Invoice Tampering**: Paid invoices should be immutable
+2. **Bed Allocation Race Conditions**: Use database transactions for admission
+3. **Financial Data Access**: Restrict billing data to authorized staff only
+4. **Audit Trail**: Log all payment and invoice modifications
 
 ---
 
@@ -334,9 +404,9 @@ CREATE INDEX idx_availability_doctor ON doctor_availability(doctor_id, hospital_
 
 | Phase | Time Estimate |
 |-------|---------------|
-| Phase 1: Database Setup | 1-2 hours |
-| Phase 2: Doctor Availability | 3-4 hours |
-| Phase 3: Hospital Appointments | 4-5 hours |
-| Phase 4: Patient Booking | 3-4 hours |
-| **Total** | **11-15 hours** |
+| Phase 1: Database Setup | 2-3 hours |
+| Phase 2: Ward & Bed Management | 4-5 hours |
+| Phase 3: In-Patient Admissions | 5-6 hours |
+| Phase 4: Billing & Invoicing | 6-7 hours |
+| **Total** | **17-21 hours** |
 
