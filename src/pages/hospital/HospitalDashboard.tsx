@@ -4,6 +4,7 @@ import { useHospitalStaff } from "@/hooks/useHospitalStaff";
 import { useHospitalApplications } from "@/hooks/useDoctorApplications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, UserPlus, Clock, CheckCircle, Building2 } from "lucide-react";
+import ProfileCompletionBanner from "@/components/hospital/ProfileCompletionBanner";
 
 interface HospitalContext {
   hospital: Hospital;
@@ -51,6 +52,9 @@ export default function HospitalDashboard() {
           Welcome to {hospital.name} management portal
         </p>
       </div>
+
+      {/* Profile Completion Banner */}
+      {isAdmin && <ProfileCompletionBanner hospital={hospital} />}
 
       {/* Hospital Info */}
       <Card>

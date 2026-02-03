@@ -55,7 +55,18 @@ const AuthPage = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
-      navigate("/dashboard");
+      // Check for redirect URL in query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get("redirect");
+      const action = urlParams.get("action");
+      
+      if (redirectTo) {
+        // Build redirect URL with action if present
+        const finalRedirect = action ? `${redirectTo}?action=${action}` : redirectTo;
+        navigate(finalRedirect);
+      } else {
+        navigate("/dashboard");
+      }
     }
   }, [user, loading, navigate]);
 

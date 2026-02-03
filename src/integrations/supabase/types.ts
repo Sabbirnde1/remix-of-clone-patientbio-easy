@@ -527,6 +527,7 @@ export type Database = {
           phone: string | null
           registration_number: string | null
           state: string | null
+          type: string | null
           updated_at: string | null
           website: string | null
         }
@@ -545,6 +546,7 @@ export type Database = {
           phone?: string | null
           registration_number?: string | null
           state?: string | null
+          type?: string | null
           updated_at?: string | null
           website?: string | null
         }
@@ -563,6 +565,7 @@ export type Database = {
           phone?: string | null
           registration_number?: string | null
           state?: string | null
+          type?: string | null
           updated_at?: string | null
           website?: string | null
         }
