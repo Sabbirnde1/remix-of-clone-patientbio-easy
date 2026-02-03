@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useMyAppointments } from "@/hooks/useAppointments";
 import { AppointmentCard } from "@/components/appointments/AppointmentCard";
 import { BookAppointmentDialog } from "@/components/appointments/BookAppointmentDialog";
+import { ReminderPreferencesCard } from "@/components/appointments/ReminderPreferencesCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays, Plus, Settings } from "lucide-react";
 import { format, isPast, isToday, isFuture, parseISO } from "date-fns";
 import { Appointment } from "@/types/hospital";
 
@@ -108,6 +109,10 @@ export default function AppointmentsPage() {
             <TabsTrigger value="past">
               Past ({pastAppointments.length})
             </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-1">
+              <Settings className="h-3 w-3" />
+              Reminders
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming" className="mt-6">
             {renderAppointmentList(
@@ -120,6 +125,11 @@ export default function AppointmentsPage() {
               pastAppointments,
               "No past appointments yet."
             )}
+          </TabsContent>
+          <TabsContent value="settings" className="mt-6">
+            <div className="max-w-xl">
+              <ReminderPreferencesCard />
+            </div>
           </TabsContent>
         </Tabs>
       )}

@@ -160,6 +160,80 @@ export type Database = {
           },
         ]
       }
+      appointment_reminder_preferences: {
+        Row: {
+          created_at: string
+          email_enabled: boolean
+          id: string
+          reminder_hours: number[]
+          sms_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          reminder_hours?: number[]
+          sms_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          reminder_hours?: number[]
+          sms_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      appointment_reminders: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          error_message: string | null
+          hours_before: number
+          id: string
+          reminder_type: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          error_message?: string | null
+          hours_before: number
+          id?: string
+          reminder_type: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          error_message?: string | null
+          hours_before?: number
+          id?: string
+          reminder_type?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointment_date: string
