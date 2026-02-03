@@ -1,11 +1,44 @@
 import { useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Admission } from "@/hooks/useAdmissions";
 import { Hospital } from "@/types/hospital";
-import { Printer, Download } from "lucide-react";
+import { Medication } from "@/hooks/usePrescriptions";
+import { supabase } from "@/integrations/supabase/client";
+import { Printer, Pill } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
+import { Json } from "@/integrations/supabase/types";
+
+// Fetch prescriptions during admission period
+const useAdmissionPrescriptions = (patientId: string, hospitalId: string, admissionDate: string, dischargeDate: string | null) => {
+  return useQuery({
+    queryKey: ["admission-prescriptions", patientId, hospitalId, admissionDate],
+    queryFn: async () => {
+      let query = supabase
+        .from("prescriptions")
+        .select("*")
+        .eq("patient_id", patientId)
+        .eq("hospital_id", hospitalId)
+        .gte("created_at", admissionDate);
+
+      if (dischargeDate) {
+        query = query.lte("created_at", dischargeDate);
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false });
+      if (error) throw error;
+
+      return data?.map(p => ({
+        ...p,
+        medications: (p.medications as Json) as unknown as Medication[],
+      })) || [];
+    },
+    enabled: !!patientId && !!hospitalId,
+  });
+};
 
 interface DischargeSummaryDialogProps {
   admission: Admission;
@@ -21,6 +54,17 @@ const DischargeSummaryDialog = ({
   onOpenChange,
 }: DischargeSummaryDialogProps) => {
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Fetch prescriptions during the admission period
+  const { data: prescriptions } = useAdmissionPrescriptions(
+    admission.patient_id,
+    hospital.id,
+    admission.admission_date,
+    admission.actual_discharge
+  );
+
+  // Aggregate all medications from prescriptions
+  const allMedications = prescriptions?.flatMap(p => p.medications || []) || [];
 
   const handlePrint = () => {
     const content = printRef.current;
@@ -57,6 +101,10 @@ const DischargeSummaryDialog = ({
             .signature-section { display: flex; justify-content: space-between; margin-top: 48px; }
             .signature-box { text-align: center; width: 200px; }
             .signature-line { border-top: 1px solid #1a1a1a; margin-top: 48px; padding-top: 8px; font-size: 12px; }
+            .med-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            .med-table th, .med-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .med-table th { background: #f5f5f5; font-weight: 600; }
+            .med-table tr:nth-child(even) { background: #fafafa; }
             @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
           </style>
         </head>
@@ -237,6 +285,46 @@ const DischargeSummaryDialog = ({
                 </p>
               )}
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Medications During Stay */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3 border-b pb-1 flex items-center gap-2">
+              <Pill className="h-4 w-4" />
+              Medications During Stay
+            </h3>
+            {allMedications.length > 0 ? (
+              <Table className="med-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[25%]">Medication</TableHead>
+                    <TableHead className="w-[15%]">Dosage</TableHead>
+                    <TableHead className="w-[20%]">Frequency</TableHead>
+                    <TableHead className="w-[15%]">Duration</TableHead>
+                    <TableHead className="w-[25%]">Instructions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allMedications.map((med, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{med.name}</TableCell>
+                      <TableCell>{med.dosage}</TableCell>
+                      <TableCell>{med.frequency}</TableCell>
+                      <TableCell>{med.duration}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {med.instructions || "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">
+                No medications prescribed during this admission.
+              </p>
+            )}
           </div>
 
           <Separator />
