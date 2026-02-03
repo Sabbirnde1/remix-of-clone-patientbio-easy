@@ -25,6 +25,8 @@ export interface Prescription {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  patient_name?: string;
+  doctor_name?: string;
 }
 
 export interface CreatePrescriptionInput {
@@ -45,7 +47,7 @@ const parseMedications = (medications: Json | null): Medication[] => {
   return [];
 };
 
-// For doctors - get prescriptions they've written
+// For doctors - get prescriptions they've written (with patient names)
 export const useDoctorPrescriptions = (patientId?: string) => {
   const { user } = useAuth();
 
@@ -54,6 +56,7 @@ export const useDoctorPrescriptions = (patientId?: string) => {
     queryFn: async (): Promise<Prescription[]> => {
       if (!user?.id) return [];
 
+      // First get prescriptions
       let query = supabase
         .from("prescriptions")
         .select("*")
@@ -64,13 +67,26 @@ export const useDoctorPrescriptions = (patientId?: string) => {
         query = query.eq("patient_id", patientId);
       }
 
-      const { data, error } = await query;
+      const { data: prescriptions, error } = await query;
 
       if (error) throw error;
+      if (!prescriptions || prescriptions.length === 0) return [];
+
+      // Get unique patient IDs and fetch their profiles
+      const patientIds = [...new Set(prescriptions.map(p => p.patient_id))];
+      const { data: profiles } = await supabase
+        .from("user_profiles")
+        .select("user_id, display_name")
+        .in("user_id", patientIds);
+
+      const patientMap = new Map(
+        (profiles || []).map(p => [p.user_id, p.display_name])
+      );
       
-      return (data || []).map(prescription => ({
+      return prescriptions.map(prescription => ({
         ...prescription,
-        medications: parseMedications(prescription.medications)
+        medications: parseMedications(prescription.medications),
+        patient_name: patientMap.get(prescription.patient_id) || undefined,
       }));
     },
     enabled: !!user?.id,
