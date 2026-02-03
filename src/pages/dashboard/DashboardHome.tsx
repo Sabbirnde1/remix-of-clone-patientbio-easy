@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useHealthData } from "@/hooks/useHealthData";
 import { useHealthRecords } from "@/hooks/useHealthRecords";
+import { useDoctorConnections } from "@/hooks/useDoctorConnections";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,7 @@ import {
   Share2,
   User,
   Heart,
+  Users,
   CheckCircle2,
   Circle,
   ArrowRight,
@@ -22,6 +24,7 @@ const DashboardHome = () => {
   const { profile, loading: profileLoading } = useUserProfile();
   const { healthData, loading: healthLoading } = useHealthData();
   const { records, isLoading: recordsLoading } = useHealthRecords();
+  const { doctors, isLoading: doctorsLoading } = useDoctorConnections();
 
   // Get time-based greeting
   const getGreeting = () => {
@@ -54,6 +57,12 @@ const DashboardHome = () => {
       completed: records.length > 0,
       link: "/dashboard/upload",
     },
+    {
+      id: "doctor",
+      label: "Add your first healthcare provider",
+      completed: doctors.length > 0,
+      link: "/dashboard/doctors",
+    },
   ];
 
   const completedCount = checklistItems.filter((item) => item.completed).length;
@@ -84,6 +93,7 @@ const DashboardHome = () => {
   ];
 
   const recordCount = records.length;
+  const doctorCount = doctors.length;
   const summaryCards = [
     {
       title: "Health Records",
@@ -91,6 +101,13 @@ const DashboardHome = () => {
       description: recordCount === 0 ? "No documents yet" : `${recordCount} document${recordCount === 1 ? '' : 's'} stored`,
       icon: FileText,
       link: "/dashboard/prescriptions",
+    },
+    {
+      title: "My Doctors",
+      value: doctorCount.toString(),
+      description: doctorCount === 0 ? "No providers yet" : `${doctorCount} provider${doctorCount === 1 ? '' : 's'} saved`,
+      icon: Users,
+      link: "/dashboard/doctors",
     },
     {
       title: "Profile Status",
@@ -131,7 +148,7 @@ const DashboardHome = () => {
       </div>
 
       {/* Getting Started Checklist */}
-      {(profileLoading || healthLoading || recordsLoading) ? (
+      {(profileLoading || healthLoading || recordsLoading || doctorsLoading) ? (
         <Card>
           <CardHeader>
             <Skeleton className="h-6 w-48" />
@@ -199,7 +216,7 @@ const DashboardHome = () => {
       ) : null}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryCards.map((card) => (
           <Card key={card.title} className="hover:shadow-md transition-shadow">
             <Link to={card.link}>
