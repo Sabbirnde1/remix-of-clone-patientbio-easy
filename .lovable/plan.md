@@ -1,186 +1,316 @@
 
+# Hospital Management System (HMS) MVP Plan
 
-# Hospital Registration Redesign Plan
+## Executive Summary
 
-## Overview
+This plan identifies what's already built, what's missing for a functional MVP, and provides a prioritized implementation roadmap to ship a working Hospital Management System.
 
-This plan creates a dedicated, streamlined registration experience specifically designed for healthcare facilities. The goal is to make hospital onboarding as frictionless as possible while collecting essential information through a guided, step-by-step process.
+---
 
 ## Current State Analysis
 
-The system currently has:
-- **Quick Register Dialog**: 3 fields (Name, Type, City) - minimal but scattered
-- **Full Registration Page**: 10 fields on a single long form - overwhelming
-- **Two separate entry points** that can confuse users about which to choose
+### What's Already Built
 
-**Key Issues:**
-1. The Quick Register dialog is hidden behind authentication
-2. The Full Registration page is a long scrolling form that feels tedious
-3. No dedicated landing page explaining benefits for hospitals
-4. No visual feedback on registration progress
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Hospital Registration | Complete | Multi-step wizard, guest-friendly |
+| Hospital Login | Complete | Dedicated auth page with redirect |
+| Hospital Dashboard | Complete | Stats, profile banner, pending apps |
+| Staff Directory | Complete | List staff, search, remove members |
+| Doctor Applications | Complete | Apply, review, approve/reject flow |
+| Hospital Settings | Complete | Update hospital info |
+| Doctor Patients View | Complete | List patients who shared access |
+| Patient Details Dialog | Complete | View health data, records |
+| Prescription Form | Complete | Create prescriptions with medications |
+| Prescriptions List | Complete | View issued prescriptions |
 
-## Proposed Solution
+### What's Missing for MVP
 
-### 1. Dedicated Hospital Registration Landing Page
+| Gap | Priority | Impact |
+|-----|----------|--------|
+| Quick Patient Registration | Critical | Doctors can't add new patients manually |
+| Patient Search | Critical | Can't find patients in the system |
+| No way for admin to be a doctor | High | Hospital creator can't prescribe |
+| No prescription printing/PDF | Medium | Doctors need printable prescriptions |
+| Dashboard is empty for new hospitals | Medium | No actionable guidance |
+| No patient count stats | Low | Dashboard stats incomplete |
 
-Create a new `/hospitals/register` page with a modern, welcoming design that:
-- Explains the benefits of registering on the platform
-- Shows trust indicators (security, free to start, quick setup)
-- Provides a clear call-to-action to begin registration
+---
 
-### 2. Multi-Step Registration Wizard
+## MVP Implementation Plan
 
-Replace the single long form with a guided 3-step wizard:
+### Phase 1: Core Patient Management (Critical)
 
-```text
-Step 1: Basic Info          Step 2: Location          Step 3: Contact
-+------------------+        +------------------+      +------------------+
-| Facility Name*   |   ->   | City*            |  ->  | Phone            |
-| Facility Type*   |        | State            |      | Email            |
-| Registration No. |        | Address          |      | Website          |
-+------------------+        | Country          |      +------------------+
-                            +------------------+
+#### 1.1 Quick Patient Registration Dialog
+
+Allow doctors to quickly register new patients who walk into the hospital.
+
+**New Component:** `QuickRegisterDialog.tsx`
+
+- Modal form to register a patient on the spot
+- Fields: Name, Phone, Date of Birth, Gender
+- Creates a user profile entry (without auth account)
+- Automatically grants doctor access to view/prescribe
+- Opens patient details dialog after creation
+
+**Database Changes:**
+- Add `is_guest_patient` boolean to `user_profiles` table (default false)
+- Allow creating patient profiles without auth.users reference for walk-in patients
+
+**Hook Changes:**
+- Add `useQuickRegisterPatient` mutation in `useDoctorPatients.ts`
+
+#### 1.2 Patient Search
+
+Allow doctors to search for existing patients by name or phone.
+
+**Changes to `DoctorPatientsPage.tsx`:**
+- Add global patient search (not just current doctor's patients)
+- Search endpoint to find patients by name/phone
+- "Request Access" button for patients not yet connected
+- Shows existing patients with access status
+
+**New Edge Function:** `search-patients`
+- Takes name/phone as input
+- Returns matching user_profiles (limited fields)
+- Respects privacy - only basic info until access granted
+
+---
+
+### Phase 2: Role and Access Improvements (High)
+
+#### 2.1 Allow Admin to Self-Assign Doctor Role
+
+Currently hospital admins can't also be doctors. Add a toggle.
+
+**Changes:**
+- Add "Enable Doctor Portal" toggle in Settings page
+- When enabled, adds `doctor` role to admin's user_roles
+- Updates hospital_staff record to include doctor capabilities
+- Shows "Doctor Portal" section in sidebar
+
+#### 2.2 Improve Staff Management
+
+Add ability to invite staff directly.
+
+**Changes to `HospitalStaffPage.tsx`:**
+- Add "Invite Staff" button
+- Dialog to enter email and assign role
+- Send invitation (or just add if user exists)
+
+---
+
+### Phase 3: Prescription Enhancements (Medium)
+
+#### 3.1 Prescription View/Print
+
+Add ability to view and print/download prescriptions.
+
+**New Component:** `PrescriptionViewDialog.tsx`
+- View full prescription details
+- Print-friendly layout
+- Download as PDF option (using browser print)
+
+**Changes:**
+- Add "View" button to prescription list items
+- Open dialog with formatted prescription
+
+#### 3.2 Patient Prescriptions in Patient Portal
+
+Patients should see prescriptions from hospital doctors.
+
+**Changes to `PrescriptionsPage.tsx` (patient dashboard):**
+- Query prescriptions where patient_id = current user
+- Show doctor name, hospital, medications
+- Same display format as doctor view
+
+---
+
+### Phase 4: Dashboard Polish (Low-Medium)
+
+#### 4.1 Improved Empty States
+
+Guide new hospital admins on next steps.
+
+**Changes to `HospitalDashboard.tsx`:**
+- Add onboarding checklist for new hospitals
+- Checklist items:
+  - Complete hospital profile
+  - Add your first staff member
+  - Register your first patient
+- Show quick action cards
+
+#### 4.2 Better Stats
+
+Add patient count and prescription stats.
+
+**Changes:**
+- Query doctor_patient_access count for patient stats
+- Query prescriptions count for prescription stats
+- Show today's prescriptions count
+
+---
+
+## Detailed Technical Specifications
+
+### Database Migration: Guest Patients
+
+```sql
+-- Add column to identify guest/walk-in patients
+ALTER TABLE user_profiles 
+ADD COLUMN is_guest_patient boolean DEFAULT false;
+
+-- Add column to link guest patients to creating hospital
+ALTER TABLE user_profiles 
+ADD COLUMN registered_by_hospital_id uuid REFERENCES hospitals(id);
+
+-- Policy: Hospital staff can view patients they registered
+CREATE POLICY "Hospital staff can view registered patients" 
+ON user_profiles
+FOR SELECT
+USING (
+  registered_by_hospital_id IS NOT NULL 
+  AND is_hospital_staff(auth.uid(), registered_by_hospital_id)
+);
 ```
 
-**Features:**
-- Progress indicator showing current step
-- Back/Next navigation between steps
-- Validation happens per step (not all at once)
-- "Skip for now" option for optional fields
-- Success celebration on completion
+### Quick Register Patient Hook
 
-### 3. Guest-Friendly Flow
-
-Allow users to start the registration wizard without logging in first:
-- Collect facility information in steps 1-3
-- Prompt for account creation/login at the final step
-- Store form data in session to preserve after auth redirect
-
-### 4. Improved Entry Points
-
-Update existing entry points to direct to the new flow:
-- Homepage CTA: "Register Your Hospital" links to new wizard
-- Navigation: "For Hospitals" links to hospitals page with clear register CTA
-- Remove Quick Register dialog in favor of unified wizard
-
----
-
-## Technical Implementation
-
-### New Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/pages/hospital/HospitalOnboardingPage.tsx` | New multi-step registration wizard |
-| `src/components/hospital/RegistrationSteps.tsx` | Step indicator component |
-| `src/components/hospital/StepBasicInfo.tsx` | Step 1: Name, Type, Registration No. |
-| `src/components/hospital/StepLocation.tsx` | Step 2: City, State, Address, Country |
-| `src/components/hospital/StepContact.tsx` | Step 3: Phone, Email, Website |
-| `src/components/hospital/RegistrationSuccess.tsx` | Success celebration screen |
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/App.tsx` | Update `/hospitals/register` route to new wizard |
-| `src/pages/hospital/HospitalsPage.tsx` | Simplify to single "Register" button |
-| `src/components/Hero.tsx` | Update CTA to link to new wizard |
-| `src/components/Navigation.tsx` | No changes needed |
-
-### Component Architecture
-
-```text
-HospitalOnboardingPage
-├── RegistrationSteps (progress indicator)
-├── Current Step Content
-│   ├── StepBasicInfo (step 1)
-│   ├── StepLocation (step 2)
-│   └── StepContact (step 3)
-├── Navigation Buttons (Back/Next/Submit)
-└── RegistrationSuccess (final screen)
+```typescript
+// In useDoctorPatients.ts
+export const useQuickRegisterPatient = () => {
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async ({
+      hospitalId,
+      display_name,
+      phone,
+      date_of_birth,
+      gender
+    }) => {
+      // 1. Create user_profile as guest patient
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .insert({
+          user_id: crypto.randomUUID(), // Generate UUID for guest
+          display_name,
+          phone,
+          date_of_birth,
+          gender,
+          is_guest_patient: true,
+          registered_by_hospital_id: hospitalId
+        })
+        .select()
+        .single();
+      
+      if (profileError) throw profileError;
+      
+      // 2. Grant doctor access
+      const { error: accessError } = await supabase
+        .from("doctor_patient_access")
+        .insert({
+          doctor_id: user.id,
+          patient_id: profile.user_id,
+          is_active: true
+        });
+      
+      if (accessError) throw accessError;
+      
+      return profile;
+    }
+  });
+};
 ```
 
----
+### Search Patients Edge Function
 
-## Detailed Step Breakdown
-
-### Step 1: Basic Information
-- **Facility Name** (required): Text input with validation
-- **Facility Type** (required): Dropdown (Hospital, Clinic, Diagnostic, Pharmacy)
-- **Registration Number** (optional): Text input for official ID
-
-### Step 2: Location Details
-- **City** (required): Text input
-- **State** (optional): Text input
-- **Street Address** (optional): Text input
-- **Country** (optional): Text input with default "India"
-
-### Step 3: Contact Information
-- **Phone** (optional): Phone input with format hint
-- **Email** (optional): Email input with validation
-- **Website** (optional): URL input
-
-### Final Step: Authentication
-- If already logged in: Submit and redirect to dashboard
-- If not logged in: Show login/signup options
-  - Store form data in sessionStorage
-  - After auth, auto-submit the registration
-
----
-
-## User Experience Improvements
-
-### Progress Indicator
-A horizontal stepper showing:
-- Completed steps (checkmark, green)
-- Current step (highlighted, blue)
-- Upcoming steps (gray)
-
-### Validation Feedback
-- Inline validation messages
-- Border color changes for error/success states
-- Clear indicators for required vs optional fields
-
-### Mobile Responsiveness
-- Full-width inputs on mobile
-- Stacked navigation buttons
-- Touch-friendly tap targets
-
-### Success Screen
-After registration:
-- Celebration animation
-- Summary of registered facility
-- Clear CTA to "Go to Dashboard"
-- Option to "Complete Profile" for optional fields
-
----
-
-## Database Changes
-
-No database schema changes required. The existing `hospitals` table already supports all fields needed for the wizard.
+```typescript
+// supabase/functions/search-patients/index.ts
+Deno.serve(async (req) => {
+  const { query, hospital_id } = await req.json();
+  
+  // Search by name or phone
+  const { data, error } = await supabaseAdmin
+    .from("user_profiles")
+    .select("user_id, display_name, phone, gender, date_of_birth")
+    .or(`display_name.ilike.%${query}%,phone.ilike.%${query}%`)
+    .eq("registered_by_hospital_id", hospital_id)
+    .limit(20);
+  
+  return new Response(JSON.stringify({ patients: data }));
+});
+```
 
 ---
 
 ## Implementation Order
 
-1. **Create step components** - Build the individual step forms
-2. **Create wizard container** - Build the main page with step navigation
-3. **Add progress indicator** - Visual stepper component
-4. **Implement session storage** - Preserve data for guest users
-5. **Update routes** - Connect new page to existing routes
-6. **Clean up old components** - Remove or deprecate old registration page
+```text
+Week 1: Core Patient Flow
++------------------------------------------+
+| 1. Database migration for guest patients |
+| 2. Quick Register Dialog                 |
+| 3. Hook for patient registration         |
+| 4. Integration with DoctorPatientsPage   |
++------------------------------------------+
+
+Week 2: Search and Access
++------------------------------------------+
+| 5. Patient search edge function          |
+| 6. Patient search UI                     |
+| 7. Request access flow                   |
++------------------------------------------+
+
+Week 3: Roles and Printing
++------------------------------------------+
+| 8. Admin doctor role toggle              |
+| 9. Prescription view dialog              |
+| 10. Print functionality                  |
++------------------------------------------+
+
+Week 4: Polish
++------------------------------------------+
+| 11. Dashboard onboarding checklist       |
+| 12. Improved stats                       |
+| 13. End-to-end testing                   |
++------------------------------------------+
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/hospital/QuickRegisterDialog.tsx` | Quick patient registration modal |
+| `src/components/hospital/PatientSearchDialog.tsx` | Search existing patients |
+| `src/components/hospital/PrescriptionViewDialog.tsx` | View/print prescription |
+| `supabase/functions/search-patients/index.ts` | Patient search API |
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/pages/hospital/DoctorPatientsPage.tsx` | Add quick register + search buttons |
+| `src/pages/hospital/HospitalDashboard.tsx` | Add onboarding checklist, patient stats |
+| `src/pages/hospital/HospitalSettingsPage.tsx` | Add doctor role toggle for admin |
+| `src/pages/hospital/DoctorPrescriptionsPage.tsx` | Add view/print action |
+| `src/hooks/useDoctorPatients.ts` | Add quick register mutation |
+| `src/components/hospital/HospitalSidebar.tsx` | Dynamic doctor portal visibility |
 
 ---
 
 ## Summary
 
-This redesign transforms hospital registration from a confusing dual-option system into a unified, guided experience:
+The Hospital module has a solid foundation with most features already implemented:
+- Registration and authentication
+- Staff and application management
+- Patient viewing and prescription creation
 
-- **Single entry point** instead of Quick Register vs Full Registration
-- **Step-by-step wizard** that feels manageable, not overwhelming
-- **Guest-friendly** so users can explore before committing to an account
-- **Progress tracking** gives visual feedback and sense of accomplishment
-- **Mobile-first design** works great on all devices
+**Critical gaps for MVP:**
+1. Doctors cannot add new walk-in patients
+2. No patient search capability
+3. Hospital admins can't also act as doctors
 
-The result is a registration flow that respects the user's time while ensuring we collect the information needed to create a useful hospital profile.
-
+This plan prioritizes these critical gaps in Week 1-2, with enhancements in Week 3-4. The result will be a fully functional HMS where hospitals can register, manage staff, add patients, and issue prescriptions.
