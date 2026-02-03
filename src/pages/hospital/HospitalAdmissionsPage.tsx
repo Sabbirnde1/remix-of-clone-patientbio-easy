@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, UserPlus, Bed, Clock, LogOut, ArrowRightLeft, FileText } from "lucide-react";
+import PatientLookupInput from "@/components/hospital/PatientLookupInput";
 import { format, differenceInDays } from "date-fns";
 import DischargeSummaryDialog from "@/components/hospital/DischargeSummaryDialog";
 
@@ -206,15 +207,11 @@ export default function HospitalAdmissionsPage() {
                 <DialogTitle>Admit New Patient</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Patient ID</Label>
-                  <Input
-                    value={newAdmission.patient_id}
-                    onChange={(e) => setNewAdmission({ ...newAdmission, patient_id: e.target.value })}
-                    placeholder="Enter patient UUID"
-                  />
-                  <p className="text-xs text-muted-foreground">Use patient lookup or enter UUID directly</p>
-                </div>
+                <PatientLookupInput
+                  value={newAdmission.patient_id}
+                  onChange={(patient_id) => setNewAdmission({ ...newAdmission, patient_id })}
+                  label="Patient"
+                />
                 <div className="space-y-2">
                   <Label>Assign Bed</Label>
                   <Select
