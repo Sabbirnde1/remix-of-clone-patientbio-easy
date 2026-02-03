@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
-import { Plus, Receipt, CreditCard, Eye, XCircle, IndianRupee, Trash2, Printer } from "lucide-react";
+import { Plus, Receipt, CreditCard, Eye, XCircle, Banknote, Trash2, Printer } from "lucide-react";
 import PatientLookupInput from "@/components/hospital/PatientLookupInput";
 import { format } from "date-fns";
 import InvoicePrintView from "@/components/hospital/InvoicePrintView";
@@ -311,7 +311,7 @@ export default function HospitalBillingPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Discount (₹)</Label>
+                  <Label>Discount (৳)</Label>
                   <Input
                     type="number"
                     value={newInvoice.discountAmount}
@@ -341,19 +341,19 @@ export default function HospitalBillingPage() {
               <div className="border-t pt-4 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal:</span>
-                  <span>₹{calculateSubtotal().toFixed(2)}</span>
+                  <span>৳{calculateSubtotal().toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Tax ({newInvoice.taxPercent}%):</span>
-                  <span>₹{(calculateSubtotal() * (newInvoice.taxPercent / 100)).toFixed(2)}</span>
+                  <span>৳{(calculateSubtotal() * (newInvoice.taxPercent / 100)).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Discount:</span>
-                  <span>-₹{newInvoice.discountAmount.toFixed(2)}</span>
+                  <span>-৳{newInvoice.discountAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total:</span>
-                  <span>₹{calculateTotal().toFixed(2)}</span>
+                  <span>৳{calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -389,10 +389,10 @@ export default function HospitalBillingPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Pending Amount</p>
-                <p className="text-3xl font-bold text-yellow-600">₹{totalPending.toFixed(0)}</p>
+                <p className="text-3xl font-bold text-yellow-600">৳{totalPending.toFixed(0)}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                <IndianRupee className="h-6 w-6 text-yellow-600" />
+                <Banknote className="h-6 w-6 text-yellow-600" />
               </div>
             </div>
           </CardContent>
@@ -402,7 +402,7 @@ export default function HospitalBillingPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Collected</p>
-                <p className="text-3xl font-bold text-green-600">₹{totalPaid.toFixed(0)}</p>
+                <p className="text-3xl font-bold text-green-600">৳{totalPaid.toFixed(0)}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
                 <CreditCard className="h-6 w-6 text-green-600" />
@@ -451,8 +451,8 @@ export default function HospitalBillingPage() {
                     <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                     <TableCell>{invoice.patient_profile?.display_name || "Unknown"}</TableCell>
                     <TableCell>{format(new Date(invoice.invoice_date), "MMM d, yyyy")}</TableCell>
-                    <TableCell>₹{invoice.total_amount.toFixed(2)}</TableCell>
-                    <TableCell>₹{invoice.amount_paid.toFixed(2)}</TableCell>
+                    <TableCell>৳{invoice.total_amount.toFixed(2)}</TableCell>
+                    <TableCell>৳{invoice.amount_paid.toFixed(2)}</TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -536,8 +536,8 @@ export default function HospitalBillingPage() {
                       <TableRow key={item.id}>
                         <TableCell>{item.description}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">₹{item.unit_price.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">₹{item.total_price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">৳{item.unit_price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">৳{item.total_price.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -547,27 +547,27 @@ export default function HospitalBillingPage() {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>₹{selectedInvoice.subtotal.toFixed(2)}</span>
+                  <span>৳{selectedInvoice.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax:</span>
-                  <span>₹{selectedInvoice.tax_amount.toFixed(2)}</span>
+                  <span>৳{selectedInvoice.tax_amount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Discount:</span>
-                  <span>-₹{selectedInvoice.discount_amount.toFixed(2)}</span>
+                  <span>-৳{selectedInvoice.discount_amount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-base pt-2 border-t">
                   <span>Total:</span>
-                  <span>₹{selectedInvoice.total_amount.toFixed(2)}</span>
+                  <span>৳{selectedInvoice.total_amount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
                   <span>Paid:</span>
-                  <span>₹{selectedInvoice.amount_paid.toFixed(2)}</span>
+                  <span>৳{selectedInvoice.amount_paid.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-medium">
                   <span>Balance:</span>
-                  <span>₹{(selectedInvoice.total_amount - selectedInvoice.amount_paid).toFixed(2)}</span>
+                  <span>৳{(selectedInvoice.total_amount - selectedInvoice.amount_paid).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -593,10 +593,10 @@ export default function HospitalBillingPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Invoice: {selectedInvoice?.invoice_number} • Balance: ₹{((selectedInvoice?.total_amount || 0) - (selectedInvoice?.amount_paid || 0)).toFixed(2)}
+              Invoice: {selectedInvoice?.invoice_number} • Balance: ৳{((selectedInvoice?.total_amount || 0) - (selectedInvoice?.amount_paid || 0)).toFixed(2)}
             </p>
             <div className="space-y-2">
-              <Label>Amount (₹)</Label>
+              <Label>Amount (৳)</Label>
               <Input
                 type="number"
                 value={newPayment.amount}

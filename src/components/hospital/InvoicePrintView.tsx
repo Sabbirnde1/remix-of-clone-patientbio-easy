@@ -112,8 +112,8 @@ const InvoicePrintView = forwardRef<HTMLDivElement, InvoicePrintViewProps>(
                 <td className="py-2 text-sm">{item.description}</td>
                 <td className="py-2 text-sm text-gray-600">{getCategoryLabel(item.category)}</td>
                 <td className="py-2 text-sm text-center">{item.quantity}</td>
-                <td className="py-2 text-sm text-right">₹{item.unit_price.toFixed(2)}</td>
-                <td className="py-2 text-sm text-right font-medium">₹{item.total_price.toFixed(2)}</td>
+                <td className="py-2 text-sm text-right">৳{item.unit_price.toFixed(2)}</td>
+                <td className="py-2 text-sm text-right font-medium">৳{item.total_price.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
@@ -124,34 +124,34 @@ const InvoicePrintView = forwardRef<HTMLDivElement, InvoicePrintViewProps>(
           <div className="w-64 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Subtotal:</span>
-              <span>₹{invoice.subtotal.toFixed(2)}</span>
+              <span>৳{invoice.subtotal.toFixed(2)}</span>
             </div>
             {invoice.tax_amount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Tax:</span>
-                <span>₹{invoice.tax_amount.toFixed(2)}</span>
+                <span>৳{invoice.tax_amount.toFixed(2)}</span>
               </div>
             )}
             {invoice.discount_amount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Discount:</span>
-                <span>-₹{invoice.discount_amount.toFixed(2)}</span>
+                <span>-৳{invoice.discount_amount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-lg border-t-2 border-gray-800 pt-2">
               <span>Total:</span>
-              <span>₹{invoice.total_amount.toFixed(2)}</span>
+              <span>৳{invoice.total_amount.toFixed(2)}</span>
             </div>
             {invoice.amount_paid > 0 && (
               <>
                 <div className="flex justify-between text-sm text-green-700">
                   <span>Amount Paid:</span>
-                  <span>₹{invoice.amount_paid.toFixed(2)}</span>
+                  <span>৳{invoice.amount_paid.toFixed(2)}</span>
                 </div>
                 {invoice.status !== "paid" && (
                   <div className="flex justify-between font-semibold text-red-700">
                     <span>Balance Due:</span>
-                    <span>₹{(invoice.total_amount - invoice.amount_paid).toFixed(2)}</span>
+                    <span>৳{(invoice.total_amount - invoice.amount_paid).toFixed(2)}</span>
                   </div>
                 )}
               </>
