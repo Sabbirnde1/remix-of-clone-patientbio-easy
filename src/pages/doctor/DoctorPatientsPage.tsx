@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDoctorPatients, useGrantPatientAccess, useLookupPatientByCode } from "@/hooks/useDoctorPatients";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ const DoctorPatientsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [patientCode, setPatientCode] = useState("");
   const [lookupResult, setLookupResult] = useState<any>(null);
@@ -134,10 +136,10 @@ const DoctorPatientsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Patients</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Patients</h1>
+          <p className="text-sm text-muted-foreground">
             Patients who have shared access with you
           </p>
         </div>
@@ -239,10 +241,10 @@ const DoctorPatientsPage = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search patients..."
@@ -252,90 +254,136 @@ const DoctorPatientsPage = () => {
             />
           </div>
 
-          {/* Clear filters button */}
+          {/* Mobile filter toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            className="sm:hidden justify-between"
+          >
+            <span className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Filters
+            </span>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </Button>
+
+          {/* Clear filters button - desktop */}
           {activeFiltersCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="self-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFilters} 
+              className="hidden sm:flex self-center text-muted-foreground hover:text-foreground"
+            >
               <X className="h-4 w-4 mr-1" />
-              Clear filters ({activeFiltersCount})
+              Clear ({activeFiltersCount})
             </Button>
           )}
         </div>
 
-        {/* Filter Chips */}
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-1 mr-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Status:</span>
+        {/* Filter Chips - collapsible on mobile */}
+        <div className={cn(
+          "space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-2",
+          !filtersOpen && "hidden sm:flex"
+        )}>
+          {/* Status filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 mr-1">
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Status:</span>
+            </div>
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("all")}
+              className="h-8 text-xs px-3"
+            >
+              All
+            </Button>
+            <Button
+              variant={statusFilter === "active" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("active")}
+              className="h-8 text-xs px-3"
+            >
+              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+              Active
+            </Button>
+            <Button
+              variant={statusFilter === "inactive" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("inactive")}
+              className="h-8 text-xs px-3"
+            >
+              Inactive
+            </Button>
           </div>
-          <Button
-            variant={statusFilter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("all")}
-            className="h-7 text-xs"
-          >
-            All
-          </Button>
-          <Button
-            variant={statusFilter === "active" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("active")}
-            className="h-7 text-xs"
-          >
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Active
-          </Button>
-          <Button
-            variant={statusFilter === "inactive" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter("inactive")}
-            className="h-7 text-xs"
-          >
-            Inactive
-          </Button>
 
-          <div className="w-px h-6 bg-border mx-2 self-center" />
+          {/* Divider - hidden on mobile */}
+          <div className="hidden sm:block w-px h-6 bg-border mx-1" />
 
-          <div className="flex items-center gap-1 mr-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Connected:</span>
+          {/* Date filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 mr-1">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Connected:</span>
+            </div>
+            <Button
+              variant={dateFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("all")}
+              className="h-8 text-xs px-3"
+            >
+              All Time
+            </Button>
+            <Button
+              variant={dateFilter === "7days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("7days")}
+              className="h-8 text-xs px-3"
+            >
+              7 Days
+            </Button>
+            <Button
+              variant={dateFilter === "30days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("30days")}
+              className="h-8 text-xs px-3"
+            >
+              30 Days
+            </Button>
+            <Button
+              variant={dateFilter === "90days" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("90days")}
+              className="h-8 text-xs px-3"
+            >
+              90 Days
+            </Button>
           </div>
-          <Button
-            variant={dateFilter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("all")}
-            className="h-7 text-xs"
-          >
-            All Time
-          </Button>
-          <Button
-            variant={dateFilter === "7days" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("7days")}
-            className="h-7 text-xs"
-          >
-            Last 7 Days
-          </Button>
-          <Button
-            variant={dateFilter === "30days" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("30days")}
-            className="h-7 text-xs"
-          >
-            Last 30 Days
-          </Button>
-          <Button
-            variant={dateFilter === "90days" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setDateFilter("90days")}
-            className="h-7 text-xs"
-          >
-            Last 90 Days
-          </Button>
+
+          {/* Mobile clear filters */}
+          {activeFiltersCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFilters} 
+              className="sm:hidden w-full mt-2 text-muted-foreground"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear all filters
+            </Button>
+          )}
         </div>
 
         {/* Results count */}
         {patients && patients.length > 0 && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground pt-1">
             Showing {filteredPatients.length} of {patients.length} patient{patients.length !== 1 ? "s" : ""}
           </p>
         )}
@@ -374,34 +422,34 @@ const DoctorPatientsPage = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPatients.map((patient: any) => (
             <Card key={patient.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                  <Avatar className="h-11 w-11 shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                       {patient.display_name?.[0]?.toUpperCase() || "P"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base truncate">
+                    <CardTitle className="text-sm sm:text-base truncate leading-tight">
                       {patient.display_name || "Unknown Patient"}
                     </CardTitle>
-                    <CardDescription className="text-xs">
+                    <CardDescription className="text-xs mt-0.5">
                       ID: {patient.patient_id?.substring(0, 8).toUpperCase()}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <User className="h-4 w-4" />
+              <CardContent className="pt-0 space-y-3">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5" />
                     <span>{patient.gender || "—"}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" />
                     <span>
                       {patient.date_of_birth
                         ? new Date().getFullYear() -
@@ -411,38 +459,41 @@ const DoctorPatientsPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant={patient.is_active ? "default" : "secondary"}
+                    className="text-xs"
                   >
                     {patient.is_active ? "Active" : "Inactive"}
                   </Badge>
                   {patient.granted_at && (
-                    <span className="text-xs text-muted-foreground self-center">
+                    <span className="text-[11px] text-muted-foreground">
                       Connected {format(new Date(patient.granted_at), "MMM d, yyyy")}
                     </span>
                   )}
                 </div>
-                <div className="mt-4 flex gap-2">
+                <div className="pt-2 border-t flex flex-col xs:flex-row gap-2">
                   <Button
                     size="sm"
                     variant="outline"
+                    className="flex-1 h-9"
                     onClick={() => {
                       setSelectedPatient(patient);
                       setDetailsDialogOpen(true);
                     }}
                   >
-                    <FileText className="h-4 w-4 mr-1" />
+                    <FileText className="h-4 w-4 mr-1.5" />
                     View Records
                   </Button>
                   <Button
                     size="sm"
+                    className="flex-1 h-9"
                     onClick={() => {
                       setSelectedPatient(patient);
                       setPrescriptionDialogOpen(true);
                     }}
                   >
-                    <Pill className="h-4 w-4 mr-1" />
+                    <Pill className="h-4 w-4 mr-1.5" />
                     Prescribe
                   </Button>
                 </div>
