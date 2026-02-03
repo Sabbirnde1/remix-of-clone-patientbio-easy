@@ -37,8 +37,8 @@ export default function HospitalsPage() {
               Find and connect with hospitals and clinics
             </p>
           </div>
-          {user && (
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            {user ? (
               <QuickRegisterDialog
                 trigger={
                   <Button variant="default">
@@ -47,14 +47,21 @@ export default function HospitalsPage() {
                   </Button>
                 }
               />
-              <Button asChild variant="outline">
-                <Link to="/hospitals/register">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Full Registration
+            ) : (
+              <Button asChild variant="default">
+                <Link to="/auth">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Quick Register
                 </Link>
               </Button>
-            </div>
-          )}
+            )}
+            <Button asChild variant="outline">
+              <Link to={user ? "/hospitals/register" : "/auth"}>
+                <Plus className="h-4 w-4 mr-2" />
+                Full Registration
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* My Hospitals Section */}
