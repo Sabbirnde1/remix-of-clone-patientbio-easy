@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useHealthData } from "@/hooks/useHealthData";
+import { useHealthRecords } from "@/hooks/useHealthRecords";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +21,7 @@ const DashboardHome = () => {
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
   const { healthData, loading: healthLoading } = useHealthData();
+  const { records, isLoading: recordsLoading } = useHealthRecords();
 
   // Get time-based greeting
   const getGreeting = () => {
@@ -49,7 +51,7 @@ const DashboardHome = () => {
     {
       id: "record",
       label: "Upload your first health record",
-      completed: false, // Will be dynamic later
+      completed: records.length > 0,
       link: "/dashboard/upload",
     },
   ];
@@ -81,11 +83,12 @@ const DashboardHome = () => {
     },
   ];
 
+  const recordCount = records.length;
   const summaryCards = [
     {
       title: "Health Records",
-      value: "0",
-      description: "No documents yet",
+      value: recordCount.toString(),
+      description: recordCount === 0 ? "No documents yet" : `${recordCount} document${recordCount === 1 ? '' : 's'} stored`,
       icon: FileText,
       link: "/dashboard/prescriptions",
     },
@@ -128,7 +131,7 @@ const DashboardHome = () => {
       </div>
 
       {/* Getting Started Checklist */}
-      {(profileLoading || healthLoading) ? (
+      {(profileLoading || healthLoading || recordsLoading) ? (
         <Card>
           <CardHeader>
             <Skeleton className="h-6 w-48" />
