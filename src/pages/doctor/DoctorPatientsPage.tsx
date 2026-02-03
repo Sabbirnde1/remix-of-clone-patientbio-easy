@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDoctorPatients, useGrantPatientAccess, useLookupPatientByCode } from "@/hooks/useDoctorPatients";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,14 +27,22 @@ import {
   AlertCircle,
   FileText,
   Pill,
+  Filter,
+  X,
 } from "lucide-react";
 import { CreatePrescriptionDialog } from "@/components/doctor/CreatePrescriptionDialog";
 import { DoctorPatientDetailsDialog } from "@/components/doctor/DoctorPatientDetailsDialog";
+import { format, subDays, isAfter } from "date-fns";
+
+type StatusFilter = "all" | "active" | "inactive";
+type DateFilter = "all" | "7days" | "30days" | "90days";
 
 const DoctorPatientsPage = () => {
   const { user } = useAuth();
   const { data: patients, isLoading } = useDoctorPatients(user?.id);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [patientCode, setPatientCode] = useState("");
   const [lookupResult, setLookupResult] = useState<any>(null);
@@ -48,9 +56,42 @@ const DoctorPatientsPage = () => {
   const lookupPatient = useLookupPatientByCode();
   const grantAccess = useGrantPatientAccess();
 
-  const filteredPatients = patients?.filter((patient: any) =>
-    patient.display_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPatients = useMemo(() => {
+    if (!patients) return [];
+
+    return patients.filter((patient: any) => {
+      // Text search
+      const matchesSearch = patient.display_name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      // Status filter
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && patient.is_active) ||
+        (statusFilter === "inactive" && !patient.is_active);
+
+      // Date filter
+      let matchesDate = true;
+      if (dateFilter !== "all" && patient.granted_at) {
+        const grantedDate = new Date(patient.granted_at);
+        const daysAgo = dateFilter === "7days" ? 7 : dateFilter === "30days" ? 30 : 90;
+        const cutoffDate = subDays(new Date(), daysAgo);
+        matchesDate = isAfter(grantedDate, cutoffDate);
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [patients, searchTerm, statusFilter, dateFilter]);
+
+  const activeFiltersCount = 
+    (statusFilter !== "all" ? 1 : 0) + 
+    (dateFilter !== "all" ? 1 : 0);
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setDateFilter("all");
+  };
 
   const handleLookup = async () => {
     if (patientCode.length < 8) {
@@ -197,15 +238,107 @@ const DoctorPatientsPage = () => {
         </Dialog>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search patients..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and Filters */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search patients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Clear filters button */}
+          {activeFiltersCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="self-center">
+              <X className="h-4 w-4 mr-1" />
+              Clear filters ({activeFiltersCount})
+            </Button>
+          )}
+        </div>
+
+        {/* Filter Chips */}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-1 mr-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Status:</span>
+          </div>
+          <Button
+            variant={statusFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("all")}
+            className="h-7 text-xs"
+          >
+            All
+          </Button>
+          <Button
+            variant={statusFilter === "active" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("active")}
+            className="h-7 text-xs"
+          >
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Active
+          </Button>
+          <Button
+            variant={statusFilter === "inactive" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter("inactive")}
+            className="h-7 text-xs"
+          >
+            Inactive
+          </Button>
+
+          <div className="w-px h-6 bg-border mx-2 self-center" />
+
+          <div className="flex items-center gap-1 mr-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Connected:</span>
+          </div>
+          <Button
+            variant={dateFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("all")}
+            className="h-7 text-xs"
+          >
+            All Time
+          </Button>
+          <Button
+            variant={dateFilter === "7days" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("7days")}
+            className="h-7 text-xs"
+          >
+            Last 7 Days
+          </Button>
+          <Button
+            variant={dateFilter === "30days" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("30days")}
+            className="h-7 text-xs"
+          >
+            Last 30 Days
+          </Button>
+          <Button
+            variant={dateFilter === "90days" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDateFilter("90days")}
+            className="h-7 text-xs"
+          >
+            Last 90 Days
+          </Button>
+        </div>
+
+        {/* Results count */}
+        {patients && patients.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredPatients.length} of {patients.length} patient{patients.length !== 1 ? "s" : ""}
+          </p>
+        )}
       </div>
 
       {/* Patients Grid */}
@@ -213,7 +346,7 @@ const DoctorPatientsPage = () => {
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : filteredPatients?.length === 0 ? (
+      ) : patients?.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />
@@ -227,9 +360,22 @@ const DoctorPatientsPage = () => {
             </Button>
           </CardContent>
         </Card>
+      ) : filteredPatients.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Search className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-1">No matching patients</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              Try adjusting your search or filters
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPatients?.map((patient: any) => (
+          {filteredPatients.map((patient: any) => (
             <Card key={patient.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
@@ -265,12 +411,17 @@ const DoctorPatientsPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <Badge
                     variant={patient.is_active ? "default" : "secondary"}
                   >
                     {patient.is_active ? "Active" : "Inactive"}
                   </Badge>
+                  {patient.granted_at && (
+                    <span className="text-xs text-muted-foreground self-center">
+                      Connected {format(new Date(patient.granted_at), "MMM d, yyyy")}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-4 flex gap-2">
                   <Button
