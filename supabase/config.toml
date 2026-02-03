@@ -1,13 +1,1 @@
-project_id = "qgvvlulywdhjbgpqkunb"
-
-[functions.admin-users]
-verify_jwt = false
-
-[functions.get-shared-patient-data]
-verify_jwt = false
-
-[functions.generate-document-url]
-verify_jwt = false
-
-[functions.send-access-notification]
-verify_jwt = false
+project_id = "wwolnohfqmihuokqqhpw"
