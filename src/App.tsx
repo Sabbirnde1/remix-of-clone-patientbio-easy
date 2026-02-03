@@ -52,6 +52,9 @@ import DoctorPatientsPage from "./pages/hospital/DoctorPatientsPage";
 import DoctorPrescriptionsPage from "./pages/hospital/DoctorPrescriptionsPage";
 import HospitalAppointmentsPage from "./pages/hospital/HospitalAppointmentsPage";
 import DoctorAvailabilityPage from "./pages/hospital/DoctorAvailabilityPage";
+import HospitalWardsPage from "./pages/hospital/HospitalWardsPage";
+import HospitalAdmissionsPage from "./pages/hospital/HospitalAdmissionsPage";
+import HospitalBillingPage from "./pages/hospital/HospitalBillingPage";
 
 // Standalone Doctor Portal imports
 import DoctorAuthPage from "./pages/doctor/DoctorAuthPage";
@@ -103,6 +106,9 @@ const App = () => (
               <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
               <Route path="appointments" element={<HospitalAppointmentsPage />} />
               <Route path="availability" element={<DoctorAvailabilityPage />} />
+              <Route path="wards" element={<HospitalWardsPage />} />
+              <Route path="admissions" element={<HospitalAdmissionsPage />} />
+              <Route path="billing" element={<HospitalBillingPage />} />
             </Route>
             
             {/* Standalone Doctor Portal Routes */}
