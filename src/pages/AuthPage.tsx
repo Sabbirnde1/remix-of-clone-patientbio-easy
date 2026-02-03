@@ -529,13 +529,13 @@ const AuthPage = () => {
 
           <p className="text-center text-xs sm:text-sm text-muted-foreground mt-6">
             By continuing, you agree to our{" "}
-            <a href="#" className="text-primary hover:underline">
+            <Link to="/terms" className="text-primary hover:underline">
               Terms of Service
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a href="#" className="text-primary hover:underline">
+            <Link to="/privacy" className="text-primary hover:underline">
               Privacy Policy
-            </a>
+            </Link>
           </p>
         </div>
       </div>
