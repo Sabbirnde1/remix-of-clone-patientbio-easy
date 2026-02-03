@@ -1,23 +1,27 @@
-// This file is kept for API compatibility
-// Using custom toast implementation instead of sonner
-import { toast as internalToast } from "@/hooks/use-toast";
-import { Toaster as InternalToaster } from "@/components/ui/toaster";
+import { useTheme } from "next-themes";
+import { Toaster as Sonner, toast } from "sonner";
 
-// Re-export for compatibility
-const Toaster = InternalToaster;
+type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-// Create a simplified toast function matching sonner's API
-const toast = (message: string | { title?: string; description?: string }) => {
-  if (typeof message === "string") {
-    return internalToast({ description: message });
-  }
-  return internalToast(message);
+const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme = "system" } = useTheme();
+
+  return (
+    <Sonner
+      theme={theme as ToasterProps["theme"]}
+      className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "group-[.toast]:text-muted-foreground",
+          actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+        },
+      }}
+      {...props}
+    />
+  );
 };
-
-// Add common toast methods
-toast.success = (message: string) => internalToast({ title: "Success", description: message });
-toast.error = (message: string) => internalToast({ title: "Error", description: message, variant: "destructive" });
-toast.warning = (message: string) => internalToast({ title: "Warning", description: message });
-toast.info = (message: string) => internalToast({ title: "Info", description: message });
 
 export { Toaster, toast };
