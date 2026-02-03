@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Share2, Copy, Check, ExternalLink, Link2, Clock, Trash2, XCircle, Plus, Loader2 } from "lucide-react";
+import { Share2, Copy, Check, ExternalLink, Link2, Clock, Trash2, XCircle, Plus, Loader2, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { Link } from "react-router-dom";
 import { useAccessTokens, AccessToken } from "@/hooks/useAccessTokens";
+import { useDoctorConnections } from "@/hooks/useDoctorConnections";
+import ShareWithDoctorDialog from "@/components/dashboard/ShareWithDoctorDialog";
 import { format, formatDistanceToNow } from "date-fns";
 
 const EXPIRY_OPTIONS = [
@@ -26,6 +28,7 @@ const ShareDataPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { tokens, isLoading, createToken, isCreating, revokeToken, deleteToken, isTokenActive, isTokenExpired } = useAccessTokens();
+  const { doctors, isLoading: doctorsLoading } = useDoctorConnections();
 
   const [copied, setCopied] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
@@ -130,6 +133,8 @@ const ShareDataPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Share with Doctor Button */}
+          <ShareWithDoctorDialog doctors={doctors} doctorsLoading={doctorsLoading} />
           {/* Create New Link Form */}
           <div className="bg-muted/50 rounded-xl p-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
