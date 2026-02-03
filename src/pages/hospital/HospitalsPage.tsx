@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHospitals, useMyHospitals } from "@/hooks/useHospitals";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Plus, Search, MapPin, Phone, ArrowRight, Zap, Stethoscope, FlaskConical, Pill } from "lucide-react";
+import { Building2, Plus, Search, MapPin, Phone, ArrowRight, Stethoscope, FlaskConical, Pill } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import QuickRegisterDialog from "@/components/hospital/QuickRegisterDialog";
 import { HospitalType } from "@/types/hospital";
 
 const HOSPITAL_TYPE_CONFIG: Record<HospitalType, { label: string; icon: React.ElementType; color: string }> = {
@@ -24,20 +23,6 @@ export default function HospitalsPage() {
   const { data: hospitals, isLoading } = useHospitals();
   const { data: myHospitals } = useMyHospitals();
   const [search, setSearch] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Check if user just returned from auth with quick-register intent
-  const shouldOpenDialog = searchParams.get("action") === "quick-register" && user;
-  const [quickRegisterOpen, setQuickRegisterOpen] = useState(false);
-
-  useEffect(() => {
-    if (shouldOpenDialog) {
-      setQuickRegisterOpen(true);
-      // Clear the action param from URL
-      searchParams.delete("action");
-      setSearchParams(searchParams, { replace: true });
-    }
-  }, [shouldOpenDialog, searchParams, setSearchParams]);
 
   const filteredHospitals = hospitals?.filter(
     (h) =>
@@ -60,31 +45,12 @@ export default function HospitalsPage() {
           </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center gap-3 mb-8">
-            {user ? (
-              <QuickRegisterDialog
-                open={quickRegisterOpen}
-                onOpenChange={setQuickRegisterOpen}
-                trigger={
-                  <Button variant="default">
-                    <Zap className="h-4 w-4 mr-2" />
-                    Quick Register
-                  </Button>
-                }
-              />
-            ) : (
-              <Button asChild variant="default">
-                <Link to="/auth?redirect=/hospitals&action=quick-register">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Quick Register
-                </Link>
-              </Button>
-            )}
-          <Button asChild variant="outline">
-            <Link to={user ? "/hospitals/register" : "/auth?redirect=/hospitals/register"}>
+        {/* Action Button */}
+        <div className="flex justify-center mb-8">
+          <Button asChild size="lg">
+            <Link to="/hospitals/register">
               <Plus className="h-4 w-4 mr-2" />
-              Full Registration
+              Register Your Facility
             </Link>
           </Button>
         </div>
@@ -171,25 +137,12 @@ export default function HospitalsPage() {
                   : "Be the first to register your healthcare facility and start managing it"}
               </p>
               {!search && (
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  {user ? (
-                    <QuickRegisterDialog
-                      trigger={
-                        <Button>
-                          <Zap className="h-4 w-4 mr-2" />
-                          Quick Register
-                        </Button>
-                      }
-                    />
-                  ) : (
-                    <Button asChild>
-                      <Link to="/auth?redirect=/hospitals&action=quick-register">
-                        <Zap className="h-4 w-4 mr-2" />
-                        Quick Register
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+                <Button asChild>
+                  <Link to="/hospitals/register">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Register Your Facility
+                  </Link>
+                </Button>
               )}
             </CardContent>
           </Card>

@@ -39,7 +39,7 @@ import QRCodePage from "./pages/dashboard/QRCodePage";
 
 // Hospital imports
 import HospitalsPage from "./pages/hospital/HospitalsPage";
-import RegisterHospitalPage from "./pages/hospital/RegisterHospitalPage";
+import HospitalOnboardingPage from "./pages/hospital/HospitalOnboardingPage";
 import ApplyToHospitalPage from "./pages/hospital/ApplyToHospitalPage";
 import HospitalLayout from "./pages/hospital/HospitalLayout";
 import HospitalDashboard from "./pages/hospital/HospitalDashboard";
@@ -77,7 +77,7 @@ const App = () => (
             
             {/* Hospital Routes */}
             <Route path="/hospitals" element={<HospitalsPage />} />
-            <Route path="/hospitals/register" element={<RegisterHospitalPage />} />
+            <Route path="/hospitals/register" element={<HospitalOnboardingPage />} />
             <Route path="/hospitals/:hospitalId/apply" element={<ApplyToHospitalPage />} />
             <Route path="/hospital/:hospitalId" element={<HospitalLayout />}>
               <Route index element={<HospitalDashboard />} />
