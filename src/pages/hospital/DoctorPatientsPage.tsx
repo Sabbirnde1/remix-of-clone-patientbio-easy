@@ -16,14 +16,17 @@ import {
   Clock, 
   FileText,
   Pill,
-  Eye
+  Eye,
+  UserPlus
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import PatientDetailsDialog from "@/components/hospital/PatientDetailsDialog";
+import QuickPatientRegisterDialog from "@/components/hospital/QuickPatientRegisterDialog";
 
 interface OutletContext {
   hospital: Hospital;
   isAdmin: boolean;
+  isDoctor: boolean;
 }
 
 export default function DoctorPatientsPage() {
@@ -32,6 +35,7 @@ export default function DoctorPatientsPage() {
   const updateAccess = useUpdatePatientAccess();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
 
   const filteredPatients = patients?.filter((patient) => {
     const name = patient.patient_profile?.display_name?.toLowerCase() || "";
@@ -58,14 +62,20 @@ export default function DoctorPatientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="h-6 w-6 text-primary" />
-          My Patients
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Patients who have shared their health data with you
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Users className="h-6 w-6 text-primary" />
+            My Patients
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Patients who have shared their health data with you
+          </p>
+        </div>
+        <Button onClick={() => setShowRegisterDialog(true)} className="gap-2">
+          <UserPlus className="h-4 w-4" />
+          Register Patient
+        </Button>
       </div>
 
       {/* Search */}
@@ -160,10 +170,13 @@ export default function DoctorPatientsPage() {
           <CardContent className="py-12 text-center">
             <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="font-semibold text-lg mb-2">No Patients Yet</h3>
-            <p className="text-muted-foreground text-sm max-w-md mx-auto">
-              When patients share their health data with you via a sharing link, 
-              they will appear here. You can then view their records and write prescriptions.
+            <p className="text-muted-foreground text-sm max-w-md mx-auto mb-4">
+              Register walk-in patients or wait for patients to share their health data with you via a sharing link.
             </p>
+            <Button onClick={() => setShowRegisterDialog(true)} className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Register Your First Patient
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -173,6 +186,14 @@ export default function DoctorPatientsPage() {
         patientId={selectedPatientId}
         hospitalId={hospital.id}
         onClose={() => setSelectedPatientId(null)}
+      />
+
+      {/* Quick Patient Registration Dialog */}
+      <QuickPatientRegisterDialog
+        hospitalId={hospital.id}
+        open={showRegisterDialog}
+        onOpenChange={setShowRegisterDialog}
+        onSuccess={(patientId) => setSelectedPatientId(patientId)}
       />
     </div>
   );

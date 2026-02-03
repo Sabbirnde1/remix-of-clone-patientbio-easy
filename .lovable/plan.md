@@ -39,13 +39,13 @@ This plan identifies what's already built, what's missing for a functional MVP, 
 
 ## MVP Implementation Plan
 
-### Phase 1: Core Patient Management (Critical)
+### Phase 1: Core Patient Management (Critical) ✅ COMPLETE
 
-#### 1.1 Quick Patient Registration Dialog
+#### 1.1 Quick Patient Registration Dialog ✅
 
 Allow doctors to quickly register new patients who walk into the hospital.
 
-**New Component:** `QuickRegisterDialog.tsx`
+**New Component:** `QuickPatientRegisterDialog.tsx` ✅
 
 - Modal form to register a patient on the spot
 - Fields: Name, Phone, Date of Birth, Gender
@@ -53,12 +53,13 @@ Allow doctors to quickly register new patients who walk into the hospital.
 - Automatically grants doctor access to view/prescribe
 - Opens patient details dialog after creation
 
-**Database Changes:**
-- Add `is_guest_patient` boolean to `user_profiles` table (default false)
-- Allow creating patient profiles without auth.users reference for walk-in patients
+**Database Changes:** ✅
+- Added `is_guest_patient` boolean to `user_profiles` table (default false)
+- Added `registered_by_hospital_id` uuid column
+- Added RLS policies for hospital staff to view/insert/update guest patients
 
-**Hook Changes:**
-- Add `useQuickRegisterPatient` mutation in `useDoctorPatients.ts`
+**Hook Changes:** ✅
+- Added `useQuickRegisterPatient` mutation in `useDoctorPatients.ts`
 
 #### 1.2 Patient Search
 

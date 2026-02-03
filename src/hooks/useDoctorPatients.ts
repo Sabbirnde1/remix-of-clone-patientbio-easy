@@ -19,6 +19,14 @@ interface PatientAccess {
   } | null;
 }
 
+interface QuickRegisterPatientInput {
+  hospitalId: string;
+  display_name: string;
+  phone: string;
+  date_of_birth: string | null;
+  gender: string | null;
+}
+
 export const useDoctorPatients = () => {
   const { user } = useAuth();
 
@@ -106,6 +114,59 @@ export const useUpdatePatientAccess = () => {
         .eq("patient_id", patientId);
 
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["doctor-patients"] });
+    },
+  });
+};
+
+export const useQuickRegisterPatient = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      hospitalId,
+      display_name,
+      phone,
+      date_of_birth,
+      gender,
+    }: QuickRegisterPatientInput) => {
+      if (!user?.id) throw new Error("Not authenticated");
+
+      // Generate a UUID for the guest patient
+      const guestUserId = crypto.randomUUID();
+
+      // 1. Create user_profile as guest patient
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .insert({
+          user_id: guestUserId,
+          display_name,
+          phone,
+          date_of_birth: date_of_birth || null,
+          gender: gender || null,
+          is_guest_patient: true,
+          registered_by_hospital_id: hospitalId,
+        })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      // 2. Grant doctor access
+      const { error: accessError } = await supabase
+        .from("doctor_patient_access")
+        .insert({
+          doctor_id: user.id,
+          patient_id: guestUserId,
+          is_active: true,
+        });
+
+      if (accessError) throw accessError;
+
+      return profile;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctor-patients"] });
