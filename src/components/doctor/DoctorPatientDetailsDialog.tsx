@@ -25,6 +25,7 @@ import {
   FileText,
   AlertCircle,
 } from "lucide-react";
+import { PatientRecordItem } from "./PatientRecordItem";
 
 interface DoctorPatientDetailsDialogProps {
   open: boolean;
@@ -233,28 +234,10 @@ export const DoctorPatientDetailsDialog = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {data?.records?.length > 0 ? (
+                {data?.records?.length > 0 ? (
                     <div className="space-y-2">
                       {data.records.map((record: any) => (
-                        <div
-                          key={record.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium text-sm">{record.title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {record.category} • {record.disease_category}
-                                {record.record_date &&
-                                  ` • ${format(new Date(record.record_date), "MMM d, yyyy")}`}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {record.file_type || "File"}
-                          </Badge>
-                        </div>
+                        <PatientRecordItem key={record.id} record={record} />
                       ))}
                     </div>
                   ) : (

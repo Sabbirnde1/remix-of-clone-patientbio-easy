@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.connect-to-doctor]
 verify_jwt = false
+
+[functions.generate-doctor-document-url]
+verify_jwt = false
