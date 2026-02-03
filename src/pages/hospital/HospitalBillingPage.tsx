@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Hospital } from "@/types/hospital";
 import { useInvoices, useInvoiceMutations, Invoice, INVOICE_STATUSES, INVOICE_ITEM_CATEGORIES } from "@/hooks/useInvoices";
@@ -14,8 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Receipt, CreditCard, Eye, XCircle, IndianRupee, Trash2 } from "lucide-react";
+import { Plus, Receipt, CreditCard, Eye, XCircle, IndianRupee, Trash2, Printer } from "lucide-react";
 import { format } from "date-fns";
+import InvoicePrintView from "@/components/hospital/InvoicePrintView";
 
 interface HospitalContext {
   hospital: Hospital;
@@ -119,6 +120,8 @@ export default function HospitalBillingPage() {
     });
   };
 
+  const printRef = useRef<HTMLDivElement>(null);
+
   const handleRecordPayment = async () => {
     if (!selectedInvoice || !user) return;
     await recordPayment.mutateAsync({
@@ -131,6 +134,34 @@ export default function HospitalBillingPage() {
     });
     setPaymentDialogOpen(false);
     setNewPayment({ amount: 0, paymentMethod: "cash", transactionRef: "", notes: "" });
+  };
+
+  const handlePrintInvoice = () => {
+    const content = printRef.current;
+    if (!content) return;
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice ${selectedInvoice?.invoice_number || ""}</title>
+          <style>
+            body { margin: 0; padding: 0; }
+            @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+          </style>
+        </head>
+        <body>
+          ${content.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   const openViewDialog = (invoice: Invoice) => {
@@ -444,12 +475,23 @@ export default function HospitalBillingPage() {
 
       {/* View Invoice Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Invoice {selectedInvoice?.invoice_number}</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Invoice {selectedInvoice?.invoice_number}</span>
+              <Button variant="outline" size="sm" onClick={handlePrintInvoice}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print
+              </Button>
+            </DialogTitle>
           </DialogHeader>
           {selectedInvoice && (
             <div className="space-y-4">
+              {/* Print Preview */}
+              <div className="hidden">
+                <InvoicePrintView ref={printRef} invoice={selectedInvoice} hospital={hospital} />
+              </div>
+              
               <div className="flex justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Patient</p>

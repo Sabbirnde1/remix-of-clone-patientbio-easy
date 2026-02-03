@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, UserPlus, Bed, Clock, LogOut, ArrowRightLeft } from "lucide-react";
+import { Plus, UserPlus, Bed, Clock, LogOut, ArrowRightLeft, FileText } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
+import DischargeSummaryDialog from "@/components/hospital/DischargeSummaryDialog";
 
 interface HospitalContext {
   hospital: Hospital;
@@ -35,6 +36,7 @@ export default function HospitalAdmissionsPage() {
   const [admitDialogOpen, setAdmitDialogOpen] = useState(false);
   const [dischargeDialogOpen, setDischargeDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
 
   const [newAdmission, setNewAdmission] = useState({
@@ -104,6 +106,11 @@ export default function HospitalAdmissionsPage() {
     setTransferDialogOpen(true);
   };
 
+  const openSummaryDialog = (admission: Admission) => {
+    setSelectedAdmission(admission);
+    setSummaryDialogOpen(true);
+  };
+
   const getStayDuration = (admissionDate: string) => {
     const days = differenceInDays(new Date(), new Date(admissionDate));
     return days === 0 ? "Today" : days === 1 ? "1 day" : `${days} days`;
@@ -143,18 +150,28 @@ export default function HospitalAdmissionsPage() {
               )}
             </div>
           </div>
-          {admission.status === "admitted" && (isAdmin || isDoctor) && (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => openTransferDialog(admission)}>
-                <ArrowRightLeft className="h-4 w-4 mr-1" />
-                Transfer
+          <div className="flex gap-2 flex-wrap">
+            {/* View Summary button for discharged patients */}
+            {admission.status === "discharged" && (
+              <Button variant="outline" size="sm" onClick={() => openSummaryDialog(admission)}>
+                <FileText className="h-4 w-4 mr-1" />
+                Summary
               </Button>
-              <Button variant="outline" size="sm" onClick={() => openDischargeDialog(admission)}>
-                <LogOut className="h-4 w-4 mr-1" />
-                Discharge
-              </Button>
-            </div>
-          )}
+            )}
+            {/* Actions for admitted patients */}
+            {admission.status === "admitted" && (isAdmin || isDoctor) && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => openTransferDialog(admission)}>
+                  <ArrowRightLeft className="h-4 w-4 mr-1" />
+                  Transfer
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => openDischargeDialog(admission)}>
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Discharge
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -434,6 +451,16 @@ export default function HospitalAdmissionsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Discharge Summary Dialog */}
+      {selectedAdmission && (
+        <DischargeSummaryDialog
+          admission={selectedAdmission}
+          hospital={hospital}
+          open={summaryDialogOpen}
+          onOpenChange={setSummaryDialogOpen}
+        />
+      )}
     </div>
   );
 }
