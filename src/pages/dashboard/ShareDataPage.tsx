@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageSkeleton, CardSkeleton } from "@/components/ui/page-skeleton";
 import { InlineEmptyState } from "@/components/ui/empty-state";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Share2, Copy, Check, ExternalLink, Link2, Clock, Trash2, XCircle, Plus, Loader2, UserPlus } from "lucide-react";
+import { Share2, Copy, Check, ExternalLink, Link2, Clock, Trash2, XCircle, Plus, Loader2, UserPlus, Eye, BarChart3, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { Link } from "react-router-dom";
@@ -79,6 +79,14 @@ const ShareDataPage = () => {
 
   const activeTokens = tokens.filter(isTokenActive);
 
+  // Analytics calculations
+  const totalViews = tokens.reduce((sum, t) => sum + (t.access_count || 0), 0);
+  const viewedTokens = tokens.filter(t => t.access_count > 0);
+  const recentlyAccessed = tokens
+    .filter(t => t.accessed_at)
+    .sort((a, b) => new Date(b.accessed_at!).getTime() - new Date(a.accessed_at!).getTime())
+    .slice(0, 3);
+
   return (
     <div className="space-y-6 max-w-2xl">
       {/* Patient ID & QR Section */}
@@ -121,6 +129,83 @@ const ShareDataPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Access Analytics Section */}
+      {tokens.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Access Analytics
+            </CardTitle>
+            <CardDescription>
+              See when and how often your shared data was viewed
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Stats Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-primary">
+                  <Eye className="h-5 w-5" />
+                  {totalViews}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Total Views</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-primary">{activeTokens.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">Active Links</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-primary">{viewedTokens.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">Links Viewed</p>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            {recentlyAccessed.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  Recent Activity
+                </h4>
+                <div className="space-y-2">
+                  {recentlyAccessed.map((token) => (
+                    <div
+                      key={token.id}
+                      className="flex items-center justify-between bg-muted/30 rounded-md p-2.5 text-sm"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Eye className="h-4 w-4 text-primary shrink-0" />
+                        <span className="font-medium truncate">
+                          {token.label || "Access Link"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                        <span className="hidden sm:inline">
+                          {format(new Date(token.accessed_at!), "MMM d, h:mm a")}
+                        </span>
+                        <span className="sm:hidden">
+                          {formatDistanceToNow(new Date(token.accessed_at!), { addSuffix: true })}
+                        </span>
+                        <Badge variant="secondary" className="text-xs">
+                          {token.access_count}x
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {totalViews === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                No one has viewed your shared links yet. Share a link to see analytics here.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Time-Limited Access Links */}
       <Card>
@@ -227,7 +312,15 @@ const ShareDataPage = () => {
                               : `Expired ${format(new Date(token.expires_at), "MMM d, yyyy")}`}
                           </span>
                           {token.access_count > 0 && (
-                            <span>Viewed {token.access_count}x</span>
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {token.access_count}x
+                            </span>
+                          )}
+                          {token.accessed_at && (
+                            <span className="hidden sm:inline text-muted-foreground/70">
+                              Last: {formatDistanceToNow(new Date(token.accessed_at), { addSuffix: true })}
+                            </span>
                           )}
                         </div>
                       </div>
