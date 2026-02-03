@@ -5,10 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Users, UserPlus, Edit, Trash2, Phone, Mail, Building2, Stethoscope, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, UserPlus, Edit, Trash2, Phone, Mail, Building2, Stethoscope, Loader2, ShieldCheck, Clock, XCircle } from "lucide-react";
 import { useDoctorConnections, DoctorConnection } from "@/hooks/useDoctorConnections";
+import { usePatientDoctorAccess } from "@/hooks/usePatientDoctorAccess";
+import { format, formatDistanceToNow } from "date-fns";
 
 interface DoctorFormData {
   doctor_name: string;
@@ -30,6 +35,7 @@ const emptyFormData: DoctorFormData = {
 
 const MyDoctorsPage = () => {
   const { doctors, isLoading, createDoctor, isCreating, updateDoctor, isUpdating, deleteDoctor, isDeleting } = useDoctorConnections();
+  const { accessRecords, isLoading: accessLoading, revokeAccess, isRevoking } = usePatientDoctorAccess();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<DoctorConnection | null>(null);
@@ -78,7 +84,7 @@ const MyDoctorsPage = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  if (isLoading) {
+  if (isLoading || accessLoading) {
     return (
       <div className="space-y-6 max-w-4xl">
         <Card>
@@ -100,6 +106,103 @@ const MyDoctorsPage = () => {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Hospital Doctors with Access */}
+      {accessRecords.length > 0 && (
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Doctors with Portal Access
+            </CardTitle>
+            <CardDescription>
+              These doctors can view your health records in their hospital portal
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {accessRecords.map((access) => (
+                <div
+                  key={access.id}
+                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={access.doctor_profile?.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10">
+                        <Stethoscope className="h-5 w-5 text-primary" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">
+                        Dr. {access.doctor_profile?.full_name || "Unknown"}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {access.doctor_profile?.specialty && (
+                          <span>{access.doctor_profile.specialty}</span>
+                        )}
+                        {access.hospital_name && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3" />
+                              {access.hospital_name}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right text-xs text-muted-foreground hidden sm:block">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Granted {formatDistanceToNow(new Date(access.granted_at), { addSuffix: true })}
+                      </div>
+                      {access.last_accessed_at && (
+                        <div>
+                          Last viewed {formatDistanceToNow(new Date(access.last_accessed_at), { addSuffix: true })}
+                        </div>
+                      )}
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <XCircle className="h-3 w-3" />
+                          <span className="hidden sm:inline">Revoke</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Revoke Doctor Access</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Dr. {access.doctor_profile?.full_name} will no longer be able to view your health records in their portal. You can always grant access again later.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => revokeAccess(access.id)}
+                            disabled={isRevoking}
+                          >
+                            Revoke Access
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Saved Doctors */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -220,9 +323,9 @@ const MyDoctorsPage = () => {
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <UserPlus className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">No connected providers</h3>
+              <h3 className="font-semibold text-lg mb-2">No saved providers</h3>
               <p className="text-muted-foreground max-w-md mb-6">
-                Add your healthcare providers to keep track of who has access to your health data and contact them easily.
+                Add your healthcare providers to keep track of who has access to your health data and share records with them easily.
               </p>
               <Button onClick={handleOpenAdd} className="bg-gradient-to-r from-primary to-secondary border-0">
                 <UserPlus className="mr-2 h-4 w-4" />
