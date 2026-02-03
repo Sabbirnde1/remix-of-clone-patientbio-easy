@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageSkeleton, CardSkeleton } from "@/components/ui/page-skeleton";
+import { InlineEmptyState } from "@/components/ui/empty-state";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Share2, Copy, Check, ExternalLink, Link2, Clock, Trash2, XCircle, Plus, Loader2, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -184,14 +185,20 @@ const ShareDataPage = () => {
           {/* Links List */}
           {isLoading ? (
             <div className="space-y-3">
-              {[1, 2].map((i) => <Skeleton key={i} className="h-20" />)}
+              <CardSkeleton />
+              <CardSkeleton />
             </div>
           ) : tokens.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Link2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No access links created yet</p>
-              <p className="text-sm">Create a link above to share with your provider</p>
-            </div>
+            <InlineEmptyState
+              icon={Link2}
+              title="No access links yet"
+              description="Create a time-limited link above to share your health data with a healthcare provider."
+              action={{
+                label: "Create Access Link",
+                onClick: handleCreateLink,
+                icon: Plus
+              }}
+            />
           ) : (
             <div className="space-y-3">
               {tokens.map((token) => {

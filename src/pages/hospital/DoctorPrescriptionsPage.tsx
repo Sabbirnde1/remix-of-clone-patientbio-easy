@@ -3,11 +3,13 @@ import { useDoctorPrescriptions } from "@/hooks/usePrescriptions";
 import { Hospital } from "@/types/hospital";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Pill, Search, Calendar, User } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface OutletContext {
   hospital: Hospital;
@@ -17,6 +19,7 @@ interface OutletContext {
 
 export default function DoctorPrescriptionsPage() {
   const { hospital } = useOutletContext<OutletContext>();
+  const navigate = useNavigate();
   const { data: prescriptions, isLoading } = useDoctorPrescriptions();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -28,16 +31,7 @@ export default function DoctorPrescriptionsPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
-      </div>
-    );
+    return <PageSkeleton type="list" />;
   }
 
   return (
@@ -131,16 +125,15 @@ export default function DoctorPrescriptionsPage() {
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Pill className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">No Prescriptions Yet</h3>
-            <p className="text-muted-foreground text-sm max-w-md mx-auto">
-              Prescriptions you create for patients will appear here. 
-              Go to "My Patients" to view patient records and write prescriptions.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Pill}
+          title="No prescriptions yet"
+          description="Prescriptions you create for patients will appear here. Go to 'My Patients' to view patient records and write prescriptions."
+          action={{
+            label: "View My Patients",
+            onClick: () => navigate(`/hospital/${hospital.id}/doctor-patients`),
+          }}
+        />
       )}
     </div>
   );
