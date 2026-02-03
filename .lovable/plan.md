@@ -1,134 +1,242 @@
 
+# Doctor Portal MVP Plan
 
-# Improved Patient Registration System
+## Overview
 
-## The Better Approach
+Based on the PDF prototype analysis, you want a **standalone Doctor Dashboard** where doctors can:
+- Register and manage their professional profile
+- View and manage patients who share access with them
+- Issue digital prescriptions
+- Generate their own QR code for patients to connect
+- Work independently OR as part of a hospital
 
-Instead of creating duplicate "guest" accounts, hospitals should leverage the existing Patient ID system that patients already have. Here's the optimal flow:
+This is a **separate pipeline** from the hospital system - doctors can exist as independent practitioners.
+
+---
+
+## Current State vs. Target State
+
+### What Exists Now
+- `doctor_profiles` table with basic info
+- Hospital-based doctor workflow (doctors join hospitals)
+- `useDoctorProfile` hook with CRUD operations
+- Doctor patient access via `doctor_patient_access` table
+- Prescription system via `prescriptions` table
+
+### What's Missing
+- Dedicated Doctor Auth page (`/doctors/login`)
+- Standalone Doctor Dashboard (`/doctor`)
+- Doctor Profile management page
+- Doctor QR Code page
+- Doctor-specific sidebar navigation
+- Auto-assign "doctor" role on profile creation
+
+---
+
+## Implementation Plan
+
+### Phase 1: Doctor Authentication Pipeline
+
+#### 1.1 Doctor Auth Page
+Create `/doctors/login` - a dedicated authentication page for doctors
+
+**File:** `src/pages/doctor/DoctorAuthPage.tsx`
+
+Features:
+- Login/Signup/Forgot Password views
+- Branded for "Doctor Portal"
+- Post-login redirect logic:
+  - If doctor profile exists: go to `/doctor`
+  - If no profile: go to `/doctor/onboarding`
+
+#### 1.2 Doctor Onboarding Page
+Create `/doctor/onboarding` - profile setup for new doctors
+
+**File:** `src/pages/doctor/DoctorOnboardingPage.tsx`
+
+Fields from PDF:
+- Doctor Name
+- BMDC/License Number
+- Specialty
+- Consultation Fee
+- Years of Experience
+- Phone
+- Birthday
+
+On submit:
+- Create doctor_profile record
+- Add "doctor" role to user_roles table
+- Redirect to `/doctor`
+
+---
+
+### Phase 2: Doctor Dashboard Layout
+
+#### 2.1 Doctor Layout Component
+**File:** `src/pages/doctor/DoctorLayout.tsx`
+
+- Sidebar navigation
+- Header with doctor name
+- Protected route (requires doctor role)
+
+#### 2.2 Doctor Sidebar
+**File:** `src/components/doctor/DoctorSidebar.tsx`
+
+Navigation items from PDF:
+- Personal Info (Profile)
+- My Patients
+- Prescriptions
+- Own QR Code
+- Notifications (future)
+- Settings
+
+---
+
+### Phase 3: Doctor Dashboard Pages
+
+#### 3.1 Doctor Home/Profile Page
+**File:** `src/pages/doctor/DoctorDashboard.tsx`
+
+Display (based on PDF Page 6):
+- Doctor Basic Information card
+- Doctor ID (first 8 chars of UUID)
+- Name, Email, Birthday
+- BMDC Number, Specialty
+- Consultation Fee, Experience
+- Edit profile button
+
+#### 3.2 Doctor Profile Edit Page
+**File:** `src/pages/doctor/DoctorProfilePage.tsx`
+
+Form to edit:
+- Full Name
+- License Number
+- Specialty (dropdown)
+- Qualification
+- Experience Years
+- Consultation Fee
+- Phone
+- Bio
+
+#### 3.3 Doctor Patients Page
+**File:** `src/pages/doctor/DoctorPatientsPage.tsx`
+
+Features:
+- List patients who shared access
+- Search patients by name
+- Add patient by Patient ID
+- View patient details
+- Create prescription
+
+#### 3.4 Doctor Prescriptions Page
+**File:** `src/pages/doctor/DoctorPrescriptionsPage.tsx`
+
+Features:
+- List all prescriptions issued
+- Search by diagnosis/medication
+- View/Print prescription
+- Filter by date
+
+#### 3.5 Doctor QR Code Page
+**File:** `src/pages/doctor/DoctorQRCodePage.tsx`
+
+Features (based on PDF Page 13):
+- Generate QR code with Doctor ID
+- Format: `patientbio:doctor:ABCD1234`
+- Download as PNG
+- Share functionality
+- Patients can scan to connect
+
+---
+
+### Phase 4: Database Updates
+
+#### 4.1 Auto-assign Doctor Role
+When a doctor profile is created, automatically add "doctor" role to `user_roles` table.
+
+This can be done via:
+- Edge function triggered on profile creation
+- Or in the `useCreateDoctorProfile` mutation
+
+#### 4.2 Add Email to Doctor Profiles (Optional)
+The `doctor_profiles` table already has most fields from the PDF. May need to add:
+- `email` field (can derive from auth.users)
+- `date_of_birth` field
+
+---
+
+### Phase 5: Route Configuration
+
+Update `App.tsx` to add new routes:
 
 ```text
-+------------------------------------------+
-|          RECOMMENDED APPROACH            |
-+------------------------------------------+
-| 1. Patient shows QR code or shares ID    |
-| 2. Doctor scans QR / enters Patient ID   |
-| 3. System finds existing patient record  |
-| 4. Doctor gets instant access to patient |
-| 5. Can view health data & prescribe      |
-+------------------------------------------+
+/doctors/login      -> DoctorAuthPage (public)
+/doctor             -> DoctorLayout (protected)
+  /doctor           -> DoctorDashboard (index)
+  /doctor/profile   -> DoctorProfilePage
+  /doctor/patients  -> DoctorPatientsPage
+  /doctor/prescriptions -> DoctorPrescriptionsPage
+  /doctor/qr-code   -> DoctorQRCodePage
+/doctor/onboarding  -> DoctorOnboardingPage (protected, no sidebar)
 ```
 
 ---
 
-## How It Works
+## Technical Specifications
 
-### Patient Side (Already Exists)
-- Patients have a unique Patient ID (first 8 chars of their UUID)
-- They can generate a QR code encoding `patientbio:ABCD1234`
-- They can share their ID verbally or via the Share feature
-
-### Hospital Side (To Build)
-
-1. **Scan QR Code** - Doctor scans patient's QR code using device camera
-2. **Manual ID Entry** - Doctor types the 8-character Patient ID
-3. **Patient Lookup** - System finds the patient in the database
-4. **Instant Access** - Doctor is immediately granted access to view/prescribe
-
----
-
-## Key Benefits
-
-| Benefit | Description |
-|---------|-------------|
-| No Duplicates | Uses existing patient accounts, no guest records |
-| Privacy | Patient ID doesn't expose personal info |
-| Faster | Scan QR = instant access, no form filling |
-| Better Data | Access real health history, not empty profiles |
-| Patient Control | Patients knowingly share their ID for access |
-
----
-
-## Technical Implementation
-
-### Phase 1: Patient Lookup by ID
-
-**New Edge Function:** `lookup-patient-by-id`
-
-Takes the 8-character Patient ID and:
-1. Finds the user_profile where `user_id` starts with that ID
-2. Returns basic info (name, gender, age) - no sensitive data yet
-3. Returns the full `user_id` for granting access
+### Doctor Auth Page Redirect Logic
 
 ```typescript
-// Request
-{ "patient_code": "ABCD1234" }
-
-// Response
-{
-  "found": true,
-  "patient_id": "abcd1234-full-uuid-here",
-  "display_name": "John Doe",
-  "gender": "Male",
-  "age": 35
-}
+useEffect(() => {
+  if (user && !loading) {
+    // Check if user has doctor profile
+    const checkProfile = async () => {
+      const { data: profile } = await supabase
+        .from("doctor_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (profile) {
+        navigate("/doctor");
+      } else {
+        navigate("/doctor/onboarding");
+      }
+    };
+    checkProfile();
+  }
+}, [user, loading]);
 ```
 
-### Phase 2: Grant Doctor Access
+### Doctor Sidebar Navigation Items
 
-**New Mutation:** `useGrantPatientAccess`
-
-When doctor confirms the patient:
-1. Insert into `doctor_patient_access` table
-2. Set `is_active = true`
-3. Open patient details dialog immediately
-
-### Phase 3: QR Code Scanner (Optional Enhancement)
-
-Add camera-based QR scanning for faster registration:
-1. Doctor clicks "Scan QR Code" button
-2. Camera opens to scan patient's QR
-3. Automatically extracts Patient ID
-4. Looks up and grants access in one flow
-
----
-
-## UI Flow
-
-### New "Add Patient" Dialog
-
-```text
-+-----------------------------------------------+
-|          Add Patient to Your List             |
-+-----------------------------------------------+
-|                                               |
-|  How would you like to add a patient?         |
-|                                               |
-|  [📸 Scan QR Code]    [🔢 Enter Patient ID]  |
-|                                               |
-+-----------------------------------------------+
-|                                               |
-|  Patient ID: [________] [Search]             |
-|                                               |
-|  ✓ Patient Found:                            |
-|  +-----------------------------------------+ |
-|  | John Doe                                 | |
-|  | Male, 35 years old                      | |
-|  | [Add to My Patients]                    | |
-|  +-----------------------------------------+ |
-|                                               |
-+-----------------------------------------------+
+```typescript
+const navItems = [
+  { title: "Dashboard", url: "/doctor", icon: LayoutDashboard },
+  { title: "Profile", url: "/doctor/profile", icon: User },
+  { title: "My Patients", url: "/doctor/patients", icon: Users },
+  { title: "Prescriptions", url: "/doctor/prescriptions", icon: Pill },
+  { title: "My QR Code", url: "/doctor/qr-code", icon: QrCode },
+];
 ```
 
----
+### Doctor QR Code Format
 
-## Database Changes
+```typescript
+const doctorId = user?.id?.substring(0, 8).toUpperCase();
+const qrValue = `patientbio:doctor:${doctorId}`;
+```
 
-**No new tables needed!** We'll use existing:
-- `user_profiles` - Already has patient data
-- `doctor_patient_access` - Already handles doctor-patient relationships
+### Doctor Layout Protection
 
-**Optional Cleanup:**
-- The `is_guest_patient` and `registered_by_hospital_id` columns can remain for edge cases (true walk-in emergencies where patient has no account)
+```typescript
+// DoctorLayout.tsx
+const { data: isDoctor } = useIsDoctor();
+const { data: doctorProfile } = useDoctorProfile();
+
+if (!user) return <Navigate to="/doctors/login" />;
+if (!doctorProfile) return <Navigate to="/doctor/onboarding" />;
+```
 
 ---
 
@@ -136,91 +244,84 @@ Add camera-based QR scanning for faster registration:
 
 | File | Purpose |
 |------|---------|
-| `src/components/hospital/AddPatientDialog.tsx` | New unified add patient modal |
-| `supabase/functions/lookup-patient-by-id/index.ts` | Patient ID lookup API |
+| `src/pages/doctor/DoctorAuthPage.tsx` | Doctor login/signup |
+| `src/pages/doctor/DoctorOnboardingPage.tsx` | New doctor profile setup |
+| `src/pages/doctor/DoctorLayout.tsx` | Dashboard layout with sidebar |
+| `src/pages/doctor/DoctorDashboard.tsx` | Doctor home with profile summary |
+| `src/pages/doctor/DoctorProfilePage.tsx` | Edit doctor profile |
+| `src/pages/doctor/DoctorPatientsPage.tsx` | View/manage patients |
+| `src/pages/doctor/DoctorPrescriptionsPage.tsx` | View issued prescriptions |
+| `src/pages/doctor/DoctorQRCodePage.tsx` | Doctor QR code page |
+| `src/components/doctor/DoctorSidebar.tsx` | Sidebar navigation |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/hospital/DoctorPatientsPage.tsx` | Replace "Register Patient" with "Add Patient" |
-| `src/hooks/useDoctorPatients.ts` | Add lookup + grant access mutations |
-
----
-
-## Edge Cases
-
-### Patient Not Found
-If ID doesn't match any patient:
-- Show helpful message: "No patient found with this ID"
-- Offer fallback: "Patient not registered yet? They can sign up at [link]"
-- Optional: Keep quick register for true emergencies
-
-### Patient Already in Doctor's List
-- Show message: "This patient is already in your list"
-- Button to open their records directly
-
-### Inactive Access
-If previously revoked access:
-- Reactivate the existing record instead of creating new
+| `src/App.tsx` | Add doctor routes |
+| `src/hooks/useDoctorProfile.ts` | Add auto-role assignment |
+| `src/types/hospital.ts` | Add `date_of_birth` to DoctorProfile if needed |
 
 ---
 
 ## Implementation Order
 
 ```text
-Step 1: Edge Function
+Step 1: Auth & Onboarding
 +------------------------------------------+
-| Create lookup-patient-by-id function     |
-| - Accept 8-char patient code             |
-| - Search user_profiles by UUID prefix    |
-| - Return patient info or not found       |
-+------------------------------------------+
-
-Step 2: Add Patient Hook
-+------------------------------------------+
-| Add useAddPatientByCode hook             |
-| - Call lookup edge function              |
-| - Grant access on confirmation           |
-| - Invalidate doctor-patients query       |
+| 1. DoctorAuthPage.tsx                    |
+| 2. DoctorOnboardingPage.tsx              |
+| 3. Update useDoctorProfile for role      |
 +------------------------------------------+
 
-Step 3: Add Patient Dialog
+Step 2: Layout & Navigation
 +------------------------------------------+
-| Create AddPatientDialog component        |
-| - Input field for Patient ID             |
-| - Search results display                 |
-| - Confirm add button                     |
-+------------------------------------------+
-
-Step 4: Update Patients Page
-+------------------------------------------+
-| Replace quick register with Add Patient  |
-| - Keep as fallback for emergencies       |
+| 4. DoctorSidebar.tsx                     |
+| 5. DoctorLayout.tsx                      |
+| 6. Add routes to App.tsx                 |
 +------------------------------------------+
 
-Optional Step 5: QR Scanner
+Step 3: Dashboard Pages
 +------------------------------------------+
-| Add camera QR scanning capability        |
-| - Use web camera API or library          |
-| - Parse patientbio: format               |
+| 7. DoctorDashboard.tsx (profile view)    |
+| 8. DoctorProfilePage.tsx (edit form)     |
+| 9. DoctorPatientsPage.tsx               |
+| 10. DoctorPrescriptionsPage.tsx         |
+| 11. DoctorQRCodePage.tsx                |
++------------------------------------------+
+
+Step 4: Integration
++------------------------------------------+
+| 12. Test complete flow                   |
+| 13. Link from main nav/homepage          |
 +------------------------------------------+
 ```
 
 ---
 
+## Patient Connection Flow
+
+When a patient scans a doctor's QR code:
+
+1. QR contains: `patientbio:doctor:ABCD1234`
+2. Patient's app parses the Doctor ID
+3. Edge function looks up doctor by ID prefix
+4. Creates entry in `doctor_patient_access`:
+   - `doctor_id`: Full doctor UUID
+   - `patient_id`: Scanning patient's UUID
+   - `is_active`: true
+5. Doctor now sees patient in their list
+
+This allows doctors to grow their patient base outside of hospitals.
+
+---
+
 ## Summary
 
-This approach is better because:
+This plan creates a **complete standalone Doctor Portal** that:
+- Allows doctors to register and build their profile
+- Gives patients a way to connect via QR code
+- Enables prescription management
+- Works alongside (but independent of) the hospital system
 
-1. **Uses existing accounts** - No duplicate patient records
-2. **Patient-controlled** - Patients share their ID intentionally
-3. **Real data** - Access actual health history, allergies, medications
-4. **Faster workflow** - Scan QR or type 8 chars vs. filling a form
-5. **Privacy-first** - Patient ID reveals nothing until doctor has access
-
-The system will:
-- Let doctors add patients by scanning QR or entering Patient ID
-- Instantly grant access to view health data and prescribe
-- Keep the quick register as a fallback for true emergencies
-
+The implementation reuses existing database tables and hooks while creating a dedicated UI pipeline for doctors.
