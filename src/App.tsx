@@ -46,6 +46,8 @@ import HospitalDashboard from "./pages/hospital/HospitalDashboard";
 import HospitalStaffPage from "./pages/hospital/HospitalStaffPage";
 import HospitalApplicationsPage from "./pages/hospital/HospitalApplicationsPage";
 import HospitalSettingsPage from "./pages/hospital/HospitalSettingsPage";
+import DoctorPatientsPage from "./pages/hospital/DoctorPatientsPage";
+import DoctorPrescriptionsPage from "./pages/hospital/DoctorPrescriptionsPage";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +84,8 @@ const App = () => (
               <Route path="staff" element={<HospitalStaffPage />} />
               <Route path="applications" element={<HospitalApplicationsPage />} />
               <Route path="settings" element={<HospitalSettingsPage />} />
+              <Route path="patients" element={<DoctorPatientsPage />} />
+              <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
             </Route>
             
             {/* Patient Dashboard Routes */}
