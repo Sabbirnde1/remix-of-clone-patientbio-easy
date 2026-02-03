@@ -124,6 +124,71 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_applications: {
+        Row: {
+          cover_letter: string | null
+          created_at: string | null
+          experience_years: number | null
+          full_name: string
+          hospital_id: string
+          id: string
+          license_number: string | null
+          phone: string | null
+          qualification: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          specialty: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cover_letter?: string | null
+          created_at?: string | null
+          experience_years?: number | null
+          full_name: string
+          hospital_id: string
+          id?: string
+          license_number?: string | null
+          phone?: string | null
+          qualification?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          specialty?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cover_letter?: string | null
+          created_at?: string | null
+          experience_years?: number | null
+          full_name?: string
+          hospital_id?: string
+          id?: string
+          license_number?: string | null
+          phone?: string | null
+          qualification?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          specialty?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_applications_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_connections: {
         Row: {
           created_at: string
@@ -159,6 +224,57 @@ export type Database = {
           phone?: string | null
           specialty?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      doctor_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          consultation_fee: number | null
+          created_at: string | null
+          experience_years: number | null
+          full_name: string
+          id: string
+          is_verified: boolean | null
+          license_number: string | null
+          phone: string | null
+          qualification: string | null
+          specialty: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          consultation_fee?: number | null
+          created_at?: string | null
+          experience_years?: number | null
+          full_name: string
+          id?: string
+          is_verified?: boolean | null
+          license_number?: string | null
+          phone?: string | null
+          qualification?: string | null
+          specialty?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          consultation_fee?: number | null
+          created_at?: string | null
+          experience_years?: number | null
+          full_name?: string
+          id?: string
+          is_verified?: boolean | null
+          license_number?: string | null
+          phone?: string | null
+          qualification?: string | null
+          specialty?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -307,6 +423,110 @@ export type Database = {
           title?: string
           uploaded_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      hospital_staff: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          employee_id: string | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          joined_at: string | null
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          employee_id?: string | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string | null
+          role?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          employee_id?: string | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string | null
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_staff_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospitals: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          phone: string | null
+          registration_number: string | null
+          state: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          registration_number?: string | null
+          state?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          registration_number?: string | null
+          state?: string | null
+          updated_at?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -466,9 +686,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_hospital_admin: {
+        Args: { _hospital_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_hospital_staff: {
+        Args: { _hospital_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "hospital_admin" | "doctor"
       disease_category:
         | "general"
         | "cancer"
@@ -609,7 +837,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "hospital_admin", "doctor"],
       disease_category: [
         "general",
         "cancer",

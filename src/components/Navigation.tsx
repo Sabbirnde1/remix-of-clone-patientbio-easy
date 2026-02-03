@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Sparkles, LogOut, Menu, User, ChevronRight, Shield, LayoutDashboard } from "lucide-react";
+import { Sparkles, LogOut, Menu, User, ChevronRight, Shield, LayoutDashboard, Building2 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
@@ -18,9 +18,9 @@ const Navigation = () => {
   const menuItems = [
     { name: "Features", href: "/features", sectionId: "features" },
     { name: "Demo", href: "/demo", sectionId: "demo" },
+    { name: "Hospitals", href: "/hospitals", sectionId: "" },
     { name: "About", href: "/about", sectionId: "about" },
     { name: "Team", href: "/team", sectionId: "team" },
-    { name: "Investors", href: "/investors", sectionId: "investors" },
     { name: "Contact", href: "/contact", sectionId: "contact" },
   ];
 
@@ -37,6 +37,11 @@ const Navigation = () => {
   }, []);
 
   const handleNavClick = useCallback((e: React.MouseEvent, item: { href: string; sectionId: string }) => {
+    // For Hospitals page, navigate directly
+    if (item.href === "/hospitals") {
+      return; // Let the default Link behavior handle it
+    }
+    
     // If we're on the homepage, scroll to section
     if (location.pathname === "/") {
       e.preventDefault();
