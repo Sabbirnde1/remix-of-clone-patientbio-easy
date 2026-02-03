@@ -1,203 +1,352 @@
 
-# Admin Panel Implementation Plan
 
-This plan outlines the implementation of a comprehensive admin panel with role-based access control (RBAC) to manage users, site content, contact form submissions, and team members.
+# Patient Dashboard Implementation Plan (Based on Prototype)
+
+This plan implements a patient-facing dashboard inspired by the mobile prototype screenshots, adapted for a responsive web application. The dashboard will serve as the central hub for authenticated patients to manage their health data.
 
 ## Overview
 
-The admin panel will be a dedicated section of the application accessible only to users with the "admin" role. It will feature a sidebar navigation for managing different aspects of the site.
+Based on the prototype analysis, the Patient Dashboard includes a sidebar navigation and multiple functional sections. For the MVP, we'll focus on the core patient features that align with the prototype's structure.
 
 ```text
-+------------------+--------------------------------+
-|                  |                                |
-|   Admin Sidebar  |        Content Area            |
-|                  |                                |
-|   - Dashboard    |   (Dynamic based on           |
-|   - Users        |    selected section)           |
-|   - Team         |                                |
-|   - Content      |                                |
-|   - Messages     |                                |
-|                  |                                |
-+------------------+--------------------------------+
++------------------+------------------------------------------------+
+|                  |                                                |
+|   User Sidebar   |              Main Content Area                 |
+|   (Collapsible)  |                                                |
+|                  |   Welcome Section                              |
+|   - Dashboard    |   +----------------------------------------+   |
+|   - Basic Info   |   | Patient Basic Information              |   |
+|   - Health Data  |   | Name, Email, ID, Location, etc.        |   |
+|   - Prescriptions|   +----------------------------------------+   |
+|   - Upload       |   | Personal Health Data                   |   |
+|   - Share Data   |   | Height, Blood Group, Allergies, etc.   |   |
+|   - My Doctors   |   +----------------------------------------+   |
+|   - My QR Code   |                                                |
+|                  |   Quick Actions / Summary Cards                |
++------------------+------------------------------------------------+
 ```
 
-## Features
+## Features from Prototype (MVP Scope)
 
-### 1. User Management
-- View all registered users with email and registration date
-- Assign/remove admin role from users
-- Deactivate user accounts
+### 1. Patient Basic Information (Read-Only View)
+- Display patient profile: Name, Email, Patient ID, Birthday, Gender, Age, Location
+- Clean card layout matching prototype aesthetic
+- Edit functionality in dedicated profile page
 
-### 2. Team Members
-- Move existing team management to admin-only (currently any logged-in user can edit)
-- Same add/edit/delete functionality but restricted to admins
+### 2. Personal Health Data Section
+- Form/display for health information:
+  - Height, Blood Group
+  - Previous Diseases, Medicine/Drugs
+  - Bad Habits, Chronic Diseases
+  - Health Allergies, Birth Defects
+- Editable form with Submit button
 
-### 3. Site Content
-- Edit homepage statistics (195+ Countries, 100% Patient Owned, 24/7 Instant Access)
-- Edit contact information (email, phone, address)
-- Manage FAQ questions and answers
+### 3. Prescription Management
+- Disease category tabs (like CANCER, COVID-19, DIABETES in prototype)
+- View uploaded prescription files as image gallery
+- Previous/Next navigation for multiple files
 
-### 4. Contact Form Submissions
-- Store all contact form submissions in database
-- View inbox of all messages with status (new/read/replied)
-- Mark messages as read
-- Delete messages
+### 4. Upload File
+- Select disease category dropdown
+- File upload with preview
+- Support for prescription images
+
+### 5. Share Data (via QR Code)
+- Generate unique patient QR code
+- Share prescription button
+- Patient ID display for sharing
+
+### 6. My Doctors / My Pathologists (Future)
+- List of connected healthcare providers
+- View prescriptions from each provider
 
 ---
 
 ## Technical Implementation
 
-### Database Changes
+### Database Schema
 
-**1. Create user roles table (for RBAC):**
+**1. Create user_profiles table:**
+
 ```sql
-CREATE TYPE public.app_role AS ENUM ('admin', 'user');
+CREATE TABLE public.user_profiles (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+    display_name text,
+    avatar_url text,
+    date_of_birth date,
+    gender text,
+    location text,
+    phone text,
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
+);
 
-CREATE TABLE public.user_roles (
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own profile"
+ON public.user_profiles FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own profile"
+ON public.user_profiles FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own profile"
+ON public.user_profiles FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+```
+
+**2. Create health_data table:**
+
+```sql
+CREATE TABLE public.health_data (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+    height text,
+    blood_group text,
+    previous_diseases text,
+    current_medications text,
+    bad_habits text,
+    chronic_diseases text,
+    health_allergies text,
+    birth_defects text,
+    emergency_contact_name text,
+    emergency_contact_phone text,
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.health_data ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own health data"
+ON public.health_data FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own health data"
+ON public.health_data FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own health data"
+ON public.health_data FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+```
+
+**3. Create health_records table for prescriptions/documents:**
+
+```sql
+CREATE TYPE public.record_category AS ENUM (
+    'prescription', 
+    'lab_result', 
+    'imaging', 
+    'vaccination', 
+    'other'
+);
+
+CREATE TYPE public.disease_category AS ENUM (
+    'general',
+    'cancer',
+    'covid19',
+    'diabetes',
+    'heart_disease',
+    'other'
+);
+
+CREATE TABLE public.health_records (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    role app_role NOT NULL,
-    created_at timestamptz DEFAULT now(),
-    UNIQUE (user_id, role)
+    title text NOT NULL,
+    description text,
+    category record_category DEFAULT 'other',
+    disease_category disease_category DEFAULT 'general',
+    file_url text NOT NULL,
+    file_type text,
+    file_size integer,
+    uploaded_at timestamptz DEFAULT now(),
+    record_date date,
+    provider_name text,
+    notes text
 );
 
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.health_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own records"
+ON public.health_records FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own records"
+ON public.health_records FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own records"
+ON public.health_records FOR UPDATE TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own records"
+ON public.health_records FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
 ```
 
-**2. Create security definer function (prevents RLS recursion):**
-```sql
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  )
-$$;
-```
+**4. Create Storage Bucket for health documents:**
 
-**3. Create contact_messages table:**
-```sql
-CREATE TABLE public.contact_messages (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name text NOT NULL,
-    email text NOT NULL,
-    subject text NOT NULL,
-    message text NOT NULL,
-    status text DEFAULT 'new',
-    created_at timestamptz DEFAULT now(),
-    read_at timestamptz
-);
-```
-
-**4. Create site_content table:**
-```sql
-CREATE TABLE public.site_content (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    key text UNIQUE NOT NULL,
-    value jsonb NOT NULL,
-    updated_at timestamptz DEFAULT now(),
-    updated_by uuid REFERENCES auth.users(id)
-);
-```
-
-**5. Update team_members RLS policies:**
-- Change INSERT/UPDATE/DELETE from "authenticated" to "admin only" using `has_role()`
+Storage bucket `health-records` with RLS policies for user-only access.
 
 ### New Files to Create
 
-**1. Admin Layout & Pages:**
-- `src/pages/admin/AdminLayout.tsx` - Sidebar layout with navigation
-- `src/pages/admin/Dashboard.tsx` - Overview with quick stats
-- `src/pages/admin/UsersPage.tsx` - User management table
-- `src/pages/admin/TeamAdminPage.tsx` - Team management (reuse existing components)
-- `src/pages/admin/ContentPage.tsx` - Site content editor
-- `src/pages/admin/MessagesPage.tsx` - Contact submissions inbox
+**1. Dashboard Layout:**
+- `src/pages/dashboard/DashboardLayout.tsx` - Main layout with sidebar navigation
+- `src/pages/dashboard/DashboardHome.tsx` - Overview/welcome page
 
-**2. Hooks:**
-- `src/hooks/useUserRole.ts` - Check if current user is admin
-- `src/hooks/useContactMessages.ts` - CRUD for contact messages
-- `src/hooks/useSiteContent.ts` - CRUD for site content
-- `src/hooks/useAdminUsers.ts` - Manage users and roles
+**2. Dashboard Pages:**
+- `src/pages/dashboard/ProfilePage.tsx` - Patient Basic Information
+- `src/pages/dashboard/HealthDataPage.tsx` - Personal Health Data form
+- `src/pages/dashboard/PrescriptionsPage.tsx` - View prescriptions by category
+- `src/pages/dashboard/UploadPage.tsx` - Upload new health records
+- `src/pages/dashboard/ShareDataPage.tsx` - QR code and sharing
+- `src/pages/dashboard/MyDoctorsPage.tsx` - Connected providers (placeholder)
 
-**3. Components:**
-- `src/components/admin/AdminSidebar.tsx` - Navigation sidebar
-- `src/components/admin/UserTable.tsx` - Users data table
-- `src/components/admin/ContentEditor.tsx` - Edit site content
-- `src/components/admin/MessageCard.tsx` - Contact message display
+**3. Dashboard Components:**
+- `src/components/dashboard/DashboardSidebar.tsx` - Navigation sidebar (purple theme like prototype)
+- `src/components/dashboard/PatientInfoCard.tsx` - Display basic info
+- `src/components/dashboard/HealthDataForm.tsx` - Editable health data
+- `src/components/dashboard/RecordGallery.tsx` - Display prescription images
+- `src/components/dashboard/CategoryTabs.tsx` - Disease category tabs
+- `src/components/dashboard/FileUploader.tsx` - Upload component
+- `src/components/dashboard/QRCodeDisplay.tsx` - User's QR code
+
+**4. Hooks:**
+- `src/hooks/useUserProfile.ts` - Fetch/update user profile
+- `src/hooks/useHealthData.ts` - Fetch/update health data
+- `src/hooks/useHealthRecords.ts` - CRUD for health records
 
 ### Files to Modify
 
 **1. `src/App.tsx`:**
-- Add protected admin routes under `/admin/*`
-- Add route guard that checks for admin role
+- Add `/dashboard/*` routes with nested routing
+- DashboardLayout as parent route element
 
 **2. `src/components/Navigation.tsx`:**
-- Add "Admin" link for admin users
+- Add "Dashboard" link for authenticated users
+- Already has this partially implemented
 
-**3. `src/components/Contact.tsx`:**
-- Save form submissions to `contact_messages` table instead of just showing a toast
+**3. `src/pages/AuthPage.tsx`:**
+- Redirect to `/dashboard` after successful login (instead of `/`)
 
-**4. `src/components/Hero.tsx` and other content components:**
-- Fetch dynamic content from `site_content` table
-- Fallback to hardcoded values if no content exists
+**4. `src/pages/VerifyEmailPage.tsx`:**
+- Redirect to `/dashboard` after successful verification
 
-### Security Considerations
+### Component Details
 
-1. **Role checking uses security definer function** - Prevents infinite recursion in RLS policies
-2. **Admin routes are protected client-side AND server-side** - RLS policies enforce database-level security
-3. **Roles stored in separate table** - Not on auth.users or profiles to prevent privilege escalation
-4. **Admin-only operations validated at database level** - Even if UI is bypassed, RLS blocks unauthorized actions
+**DashboardSidebar.tsx (matching prototype):**
+- Purple/violet header with user avatar and name
+- Navigation items with icons:
+  - Dashboard (home icon)
+  - Patient Basic Information (info icon)
+  - Update Personal Health Data (refresh icon)
+  - Prescriptions (prescription icon)
+  - Upload File (upload icon)
+  - Share Data (share icon)
+  - Personal Doctor (user-doctor icon)
+  - My QR Code (qr-code icon)
+- Collapsible on mobile
+
+**PatientInfoCard.tsx:**
+- Styled card matching prototype's "Patient Basic Information" section
+- Fields: Email, Patient ID, Name, Birthday, Gender, Age, Location
+- Non-editable display with "Edit Profile" link
+
+**HealthDataForm.tsx:**
+- Form matching "Update Personal Health data" screen
+- Input fields for all health data points
+- Submit button with loading state
+- Success/error toast feedback
+
+**RecordGallery.tsx:**
+- Grid/carousel of uploaded prescription images
+- Previous/Next navigation
+- Click to view full size
+- Disease category filter
 
 ---
 
 ## Implementation Order
 
-1. **Phase 1: Database Setup**
-   - Create roles enum and user_roles table
-   - Create has_role() security function
-   - Create contact_messages table
-   - Create site_content table
-   - Update team_members RLS policies
+### Phase 1: Database & Storage Setup
+1. Create user_profiles table with RLS
+2. Create health_data table with RLS
+3. Create health_records table with RLS
+4. Create health-records storage bucket
 
-2. **Phase 2: Admin Infrastructure**
-   - Create useUserRole hook
-   - Create AdminLayout with sidebar
-   - Add admin routes to App.tsx
-   - Add admin link to Navigation
+### Phase 2: Dashboard Infrastructure
+1. Create DashboardLayout with sidebar
+2. Create DashboardSidebar component
+3. Add dashboard routes to App.tsx
+4. Create useUserProfile hook
+5. Create useHealthData hook
 
-3. **Phase 3: User Management**
-   - Create useAdminUsers hook
-   - Build UsersPage with role assignment UI
+### Phase 3: Core Pages
+1. Build DashboardHome (welcome/overview)
+2. Build ProfilePage (patient basic info)
+3. Build HealthDataPage (update health data form)
 
-4. **Phase 4: Contact Messages**
-   - Update Contact form to save to database
-   - Create useContactMessages hook
-   - Build MessagesPage inbox
+### Phase 4: Health Records
+1. Create useHealthRecords hook
+2. Build UploadPage with file uploader
+3. Build PrescriptionsPage with category tabs
+4. Build RecordGallery component
 
-5. **Phase 5: Site Content**
-   - Create useSiteContent hook
-   - Build ContentPage editor
-   - Update Hero and Contact to use dynamic content
+### Phase 5: Sharing Features
+1. Build ShareDataPage
+2. Implement QR code generation
+3. Create shareable patient ID display
 
-6. **Phase 6: Team (Admin-Only)**
-   - Update RLS policies for admin-only access
-   - Move team management UI to admin section
+### Phase 6: Polish & Navigation
+1. Update auth redirects to /dashboard
+2. Add dashboard link to main Navigation
+3. Implement responsive design
+4. Add loading states and skeletons
 
 ---
 
-## First Admin User
+## Design Specifications
 
-After implementation, you will need to manually add yourself as the first admin. This can be done by:
-1. Signing up/logging in to get your user ID
-2. Running a SQL command in the database:
-   ```sql
-   INSERT INTO public.user_roles (user_id, role)
-   VALUES ('your-user-id-here', 'admin');
-   ```
+**Color Scheme (from prototype):**
+- Primary: Purple/Violet (#7C3AED or similar) - header bars
+- Cards: White with subtle shadows
+- Text: Dark gray/black
+- Accent buttons: Purple gradient
 
-This ensures the admin role cannot be self-assigned through the UI.
+**Typography:**
+- Headers: Bold, larger size
+- Labels: Medium weight, muted color
+- Values: Regular weight, dark color
+
+**Layout:**
+- Sidebar: 280px width on desktop, collapsible on mobile
+- Content area: Responsive padding
+- Cards: Rounded corners, subtle shadows
+- Forms: Full-width inputs with labels above
+
+---
+
+## Security Considerations
+
+1. All tables protected by RLS - users can only access their own data
+2. Storage bucket restricted to authenticated users' own folders
+3. Dashboard routes protected by auth check in layout
+4. Patient ID derived from user UUID (not exposable)
+5. QR codes encode limited, non-sensitive sharing info
+
+---
+
+## Future Enhancements (Not in MVP)
+
+- Provider sharing with time-limited access tokens
+- Notifications system
+- Integration with healthcare providers (doctors, pathologists)
+- Document OCR for prescription data extraction
+- Emergency access with PIN/biometrics
+- Subscription/premium features
+
