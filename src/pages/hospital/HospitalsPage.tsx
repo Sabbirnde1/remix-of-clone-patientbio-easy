@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Plus, Search, MapPin, Phone, ArrowRight } from "lucide-react";
+import { Building2, Plus, Search, MapPin, Phone, ArrowRight, Zap } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import QuickRegisterDialog from "@/components/hospital/QuickRegisterDialog";
 
 export default function HospitalsPage() {
   const { user } = useAuth();
@@ -37,12 +38,22 @@ export default function HospitalsPage() {
             </p>
           </div>
           {user && (
-            <Button asChild>
-              <Link to="/hospitals/register">
-                <Plus className="h-4 w-4 mr-2" />
-                Register Hospital
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <QuickRegisterDialog
+                trigger={
+                  <Button variant="default">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Quick Register
+                  </Button>
+                }
+              />
+              <Button asChild variant="outline">
+                <Link to="/hospitals/register">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Full Registration
+                </Link>
+              </Button>
+            </div>
           )}
         </div>
 
