@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Mail, Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { Building2, Mail, Lock, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyHospitals } from "@/hooks/useHospitals";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -26,21 +26,38 @@ export default function HospitalAuthPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
-  const { data: myHospitals, isLoading: hospitalsLoading } = useMyHospitals();
 
-  // Redirect if already logged in
+  // Redirect if already logged in - fetch hospitals directly
   useEffect(() => {
-    if (!loading && user && !hospitalsLoading) {
-      // Check if user has hospitals
-      if (myHospitals && myHospitals.length > 0) {
-        // Redirect to first hospital dashboard
-        navigate(`/hospital/${myHospitals[0].hospital_id}`);
-      } else {
-        // Redirect to hospitals page to register
-        navigate("/hospitals");
+    const checkAndRedirect = async () => {
+      if (!loading && user) {
+        try {
+          // Fetch user's hospitals directly
+          const { data: staffRecords, error } = await supabase
+            .from("hospital_staff")
+            .select("hospital_id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .limit(1);
+
+          if (error) throw error;
+
+          if (staffRecords && staffRecords.length > 0) {
+            // Redirect to first hospital dashboard
+            navigate(`/hospital/${staffRecords[0].hospital_id}`, { replace: true });
+          } else {
+            // No hospitals - redirect to registration
+            navigate("/hospitals/register", { replace: true });
+          }
+        } catch (err) {
+          console.error("Error checking hospitals:", err);
+          navigate("/hospitals", { replace: true });
+        }
       }
-    }
-  }, [user, loading, myHospitals, hospitalsLoading, navigate]);
+    };
+
+    checkAndRedirect();
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,12 +142,9 @@ export default function HospitalAuthPage() {
             description: message,
             variant: "destructive",
           });
-        } else {
-          toast({
-            title: "Welcome back!",
-            description: "Redirecting to your hospital dashboard...",
-          });
+          setIsLoading(false);
         }
+        // Don't set isLoading to false on success - let useEffect handle redirect
       } else {
         const { error } = await signUp(formData.email, formData.password);
         if (error) {
@@ -143,6 +157,7 @@ export default function HospitalAuthPage() {
             description: message,
             variant: "destructive",
           });
+          setIsLoading(false);
         } else {
           navigate("/verify-email");
         }
@@ -153,19 +168,28 @@ export default function HospitalAuthPage() {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  if (loading || (user && hospitalsLoading)) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show loading while checking hospitals for logged-in user
+  if (user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">Redirecting to your dashboard...</p>
       </div>
     );
   }
