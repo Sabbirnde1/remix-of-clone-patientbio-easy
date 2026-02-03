@@ -17,6 +17,7 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
+import ShareViewPage from "./pages/ShareViewPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import UsersPage from "./pages/admin/UsersPage";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/share/:token" element={<ShareViewPage />} />
             
             {/* Patient Dashboard Routes */}
             <Route path="/dashboard" element={<DashboardLayout />}>
