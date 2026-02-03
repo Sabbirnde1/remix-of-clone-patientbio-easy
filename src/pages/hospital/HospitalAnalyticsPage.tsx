@@ -9,7 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
 import { 
-  TrendingUp, Users, Bed, IndianRupee, CalendarDays, 
+  TrendingUp, Users, Bed, Banknote, CalendarDays, 
   Activity, UserCheck, Clock 
 } from "lucide-react";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek } from "date-fns";
@@ -204,13 +204,13 @@ export default function HospitalAnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Revenue Collected</p>
-                <p className="text-3xl font-bold text-green-600">₹{(collectedRevenue / 1000).toFixed(1)}K</p>
+                <p className="text-3xl font-bold text-green-600">৳{(collectedRevenue / 1000).toFixed(1)}K</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  ₹{(pendingRevenue / 1000).toFixed(1)}K pending
+                  ৳{(pendingRevenue / 1000).toFixed(1)}K pending
                 </p>
               </div>
               <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                <IndianRupee className="h-6 w-6 text-green-600" />
+                <Banknote className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -278,7 +278,7 @@ export default function HospitalAnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <IndianRupee className="h-5 w-5" />
+                <Banknote className="h-5 w-5" />
                 Revenue Trend (Last 14 Days)
               </CardTitle>
               <CardDescription>Daily revenue collected</CardDescription>
@@ -289,14 +289,14 @@ export default function HospitalAnalyticsPage() {
                   <LineChart data={revenueTrend}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => `₹${value / 1000}K`} />
+                    <YAxis className="text-xs" tickFormatter={(value) => `৳${value / 1000}K`} />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: "hsl(var(--background))", 
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px"
                       }}
-                      formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]}
+                      formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]}
                     />
                     <Line 
                       type="monotone" 
