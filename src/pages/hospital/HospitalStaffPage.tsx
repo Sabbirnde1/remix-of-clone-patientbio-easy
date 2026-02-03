@@ -24,6 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
+import { InlineEmptyState } from "@/components/ui/empty-state";
 import { Users, Search, UserMinus, Loader2 } from "lucide-react";
 
 interface HospitalContext {
@@ -100,13 +102,15 @@ export default function HospitalStaffPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
+            <PageSkeleton type="table" />
           ) : filteredStaff?.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {search ? "No staff found matching your search" : "No staff members yet"}
-            </div>
+            <InlineEmptyState
+              icon={Users}
+              title={search ? "No matching staff" : "No staff members yet"}
+              description={search 
+                ? "Try adjusting your search terms to find staff members." 
+                : "Staff members who join this hospital will appear here."}
+            />
           ) : (
             <div className="overflow-x-auto">
               <Table>

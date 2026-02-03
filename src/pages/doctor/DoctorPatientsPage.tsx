@@ -31,6 +31,8 @@ import {
   Filter,
   X,
 } from "lucide-react";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
+import { EmptyState, InlineEmptyState } from "@/components/ui/empty-state";
 import { CreatePrescriptionDialog } from "@/components/doctor/CreatePrescriptionDialog";
 import { DoctorPatientDetailsDialog } from "@/components/doctor/DoctorPatientDetailsDialog";
 import { format, subDays, isAfter } from "date-fns";
@@ -391,36 +393,28 @@ const DoctorPatientsPage = () => {
 
       {/* Patients Grid */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <PageSkeleton type="cards" />
       ) : patients?.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-1">No patients yet</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Add patients by entering their Patient ID or share your QR code
-            </p>
-            <Button onClick={() => setAddDialogOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Patient
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title="No patients yet"
+          description="Add patients by entering their Patient ID or have them scan your QR code to grant you access to their health records."
+          action={{
+            label: "Add Patient",
+            onClick: () => setAddDialogOpen(true),
+            icon: UserPlus
+          }}
+        />
       ) : filteredPatients.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Search className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-1">No matching patients</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Try adjusting your search or filters
-            </p>
-            <Button variant="outline" onClick={clearFilters}>
-              Clear Filters
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Search}
+          title="No matching patients"
+          description="No patients match your current filters. Try adjusting your search or filter criteria."
+          action={{
+            label: "Clear Filters",
+            onClick: clearFilters
+          }}
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPatients.map((patient: any) => (

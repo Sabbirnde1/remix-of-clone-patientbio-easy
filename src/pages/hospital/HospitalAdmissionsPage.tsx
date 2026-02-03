@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
+import { InlineEmptyState } from "@/components/ui/empty-state";
 import { Plus, UserPlus, Bed, Clock, LogOut, ArrowRightLeft, FileText } from "lucide-react";
 import PatientLookupInput from "@/components/hospital/PatientLookupInput";
 import { format, differenceInDays } from "date-fns";
@@ -179,7 +181,7 @@ export default function HospitalAdmissionsPage() {
   );
 
   if (currentLoading || allLoading) {
-    return <div className="flex items-center justify-center p-8">Loading...</div>;
+    return <PageSkeleton type="dashboard" />;
   }
 
   const dischargedToday = allAdmissions?.filter(
@@ -342,12 +344,16 @@ export default function HospitalAdmissionsPage() {
 
         <TabsContent value="current" className="space-y-4 mt-4">
           {currentAdmissions?.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <Bed className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No current admissions</p>
-              </CardContent>
-            </Card>
+            <InlineEmptyState
+              icon={Bed}
+              title="No current admissions"
+              description="All beds are currently available. Admit a patient to get started."
+              action={(isAdmin || isDoctor) ? {
+                label: "Admit Patient",
+                onClick: () => setAdmitDialogOpen(true),
+                icon: UserPlus
+              } : undefined}
+            />
           ) : (
             currentAdmissions?.map(renderAdmissionCard)
           )}
@@ -355,12 +361,11 @@ export default function HospitalAdmissionsPage() {
 
         <TabsContent value="discharged-today" className="space-y-4 mt-4">
           {dischargedToday.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <LogOut className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No discharges today</p>
-              </CardContent>
-            </Card>
+            <InlineEmptyState
+              icon={LogOut}
+              title="No discharges today"
+              description="No patients have been discharged today. Discharged patients will appear here."
+            />
           ) : (
             dischargedToday.map(renderAdmissionCard)
           )}
@@ -368,12 +373,16 @@ export default function HospitalAdmissionsPage() {
 
         <TabsContent value="all" className="space-y-4 mt-4">
           {allAdmissions?.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <Bed className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No admissions found</p>
-              </CardContent>
-            </Card>
+            <InlineEmptyState
+              icon={Bed}
+              title="No admissions yet"
+              description="Your hospital's admission history will appear here once you start admitting patients."
+              action={(isAdmin || isDoctor) ? {
+                label: "Admit First Patient",
+                onClick: () => setAdmitDialogOpen(true),
+                icon: UserPlus
+              } : undefined}
+            />
           ) : (
             allAdmissions?.map(renderAdmissionCard)
           )}

@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
 import { Plus, Receipt, CreditCard, Eye, XCircle, IndianRupee, Trash2, Printer } from "lucide-react";
 import PatientLookupInput from "@/components/hospital/PatientLookupInput";
 import { format } from "date-fns";
@@ -190,7 +191,7 @@ export default function HospitalBillingPage() {
     : invoices?.filter((i) => i.status === statusFilter);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center p-8">Loading...</div>;
+    return <PageSkeleton type="table" />;
   }
 
   const totalPending = invoices?.filter((i) => i.status === "pending" || i.status === "partial")
