@@ -91,6 +91,65 @@ export type Database = {
         }
         Relationships: []
       }
+      appointments: {
+        Row: {
+          appointment_date: string
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string | null
+          doctor_id: string
+          end_time: string
+          hospital_id: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          reason: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_date: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string | null
+          doctor_id: string
+          end_time: string
+          hospital_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          reason?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_date?: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string | null
+          doctor_id?: string
+          end_time?: string
+          hospital_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          reason?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string | null
@@ -182,6 +241,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "doctor_applications_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_availability: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          doctor_id: string
+          end_time: string
+          hospital_id: string | null
+          id: string
+          is_active: boolean | null
+          slot_duration_minutes: number
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          doctor_id: string
+          end_time: string
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          slot_duration_minutes?: number
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          doctor_id?: string
+          end_time?: string
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          slot_duration_minutes?: number
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_availability_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
             referencedRelation: "hospitals"
@@ -355,6 +461,44 @@ export type Database = {
             columns: ["token_id"]
             isOneToOne: false
             referencedRelation: "access_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_time_off: {
+        Row: {
+          created_at: string | null
+          doctor_id: string
+          end_date: string
+          hospital_id: string | null
+          id: string
+          reason: string | null
+          start_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          doctor_id: string
+          end_date: string
+          hospital_id?: string | null
+          id?: string
+          reason?: string | null
+          start_date: string
+        }
+        Update: {
+          created_at?: string | null
+          doctor_id?: string
+          end_date?: string
+          hospital_id?: string | null
+          id?: string
+          reason?: string | null
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_time_off_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
             referencedColumns: ["id"]
           },
         ]
@@ -805,6 +949,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "hospital_admin" | "doctor"
+      appointment_status:
+        | "scheduled"
+        | "confirmed"
+        | "completed"
+        | "cancelled"
+        | "no_show"
       disease_category:
         | "general"
         | "cancer"
@@ -946,6 +1096,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "hospital_admin", "doctor"],
+      appointment_status: [
+        "scheduled",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
       disease_category: [
         "general",
         "cancer",

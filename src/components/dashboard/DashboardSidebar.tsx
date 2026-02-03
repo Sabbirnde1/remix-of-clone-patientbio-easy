@@ -11,6 +11,7 @@ import {
   LogOut,
   ChevronLeft,
   Sparkles,
+  CalendarDays,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ const navItems = [
   { title: "Upload File", url: "/dashboard/upload", icon: Upload },
   { title: "Share Data", url: "/dashboard/share", icon: Share2 },
   { title: "My Doctors", url: "/dashboard/doctors", icon: Users },
+  { title: "Appointments", url: "/dashboard/appointments", icon: CalendarDays },
   { title: "My QR Code", url: "/dashboard/qr-code", icon: QrCode },
 ];
 
