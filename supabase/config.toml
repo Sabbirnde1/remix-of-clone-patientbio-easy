@@ -2,3 +2,6 @@ project_id = "wwolnohfqmihuokqqhpw"
 
 [functions.lookup-patient-by-id]
 verify_jwt = false
+
+[functions.connect-to-doctor]
+verify_jwt = false
