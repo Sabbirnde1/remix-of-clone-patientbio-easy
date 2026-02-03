@@ -21,6 +21,8 @@ import {
   Clock
 } from "lucide-react";
 import { PrescriptionViewDialog } from "@/components/doctor/PrescriptionViewDialog";
+import { usePagination } from "@/hooks/usePagination";
+import { DataTablePagination } from "@/components/admin/DataTablePagination";
 
 type StatusFilter = "all" | "active" | "completed";
 type DateFilter = "all" | "7days" | "30days" | "90days";
@@ -65,6 +67,16 @@ const DoctorPrescriptionsPage = () => {
       return matchesSearch && matchesStatus && matchesDate;
     });
   }, [prescriptions, searchTerm, statusFilter, dateFilter]);
+
+  // Pagination
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedPrescriptions,
+    goToPage,
+    hasNextPage,
+    hasPrevPage,
+  } = usePagination({ data: filteredPrescriptions, itemsPerPage: 10 });
 
   const activeFiltersCount = 
     (statusFilter !== "all" ? 1 : 0) + 
@@ -264,7 +276,7 @@ const DoctorPrescriptionsPage = () => {
         </Card>
       ) : (
         <div className="space-y-3">
-          {filteredPrescriptions.map((rx: Prescription) => (
+          {paginatedPrescriptions.map((rx: Prescription) => (
             <Card key={rx.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -339,6 +351,13 @@ const DoctorPrescriptionsPage = () => {
               </CardContent>
             </Card>
           ))}
+          <DataTablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPrevPage={hasPrevPage}
+          />
         </div>
       )}
 

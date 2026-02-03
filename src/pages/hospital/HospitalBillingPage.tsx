@@ -19,6 +19,8 @@ import { Plus, Receipt, CreditCard, Eye, XCircle, IndianRupee, Trash2, Printer }
 import PatientLookupInput from "@/components/hospital/PatientLookupInput";
 import { format } from "date-fns";
 import InvoicePrintView from "@/components/hospital/InvoicePrintView";
+import { usePagination } from "@/hooks/usePagination";
+import { DataTablePagination } from "@/components/admin/DataTablePagination";
 
 interface HospitalContext {
   hospital: Hospital;
@@ -189,6 +191,16 @@ export default function HospitalBillingPage() {
   const filteredInvoices = statusFilter === "all"
     ? invoices
     : invoices?.filter((i) => i.status === statusFilter);
+
+  // Pagination for invoices
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedInvoices,
+    goToPage,
+    hasNextPage,
+    hasPrevPage,
+  } = usePagination({ data: filteredInvoices || [], itemsPerPage: 10 });
 
   if (isLoading) {
     return <PageSkeleton type="table" />;
@@ -427,14 +439,14 @@ export default function HospitalBillingPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredInvoices?.length === 0 ? (
+              {paginatedInvoices.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No invoices found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInvoices?.map((invoice) => (
+                paginatedInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                     <TableCell>{invoice.patient_profile?.display_name || "Unknown"}</TableCell>
@@ -470,6 +482,13 @@ export default function HospitalBillingPage() {
             </TableBody>
           </Table>
         </CardContent>
+        <DataTablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
       </Card>
 
       {/* View Invoice Dialog */}

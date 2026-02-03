@@ -20,6 +20,8 @@ import { Plus, UserPlus, Bed, Clock, LogOut, ArrowRightLeft, FileText } from "lu
 import PatientLookupInput from "@/components/hospital/PatientLookupInput";
 import { format, differenceInDays } from "date-fns";
 import DischargeSummaryDialog from "@/components/hospital/DischargeSummaryDialog";
+import { usePagination } from "@/hooks/usePagination";
+import { DataTablePagination } from "@/components/admin/DataTablePagination";
 
 interface HospitalContext {
   hospital: Hospital;
@@ -189,6 +191,11 @@ export default function HospitalAdmissionsPage() {
       format(new Date(a.actual_discharge), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
   ) || [];
 
+  // Pagination for each tab
+  const currentPagination = usePagination({ data: currentAdmissions || [], itemsPerPage: 10 });
+  const dischargedTodayPagination = usePagination({ data: dischargedToday, itemsPerPage: 10 });
+  const allPagination = usePagination({ data: allAdmissions || [], itemsPerPage: 10 });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -355,7 +362,16 @@ export default function HospitalAdmissionsPage() {
               } : undefined}
             />
           ) : (
-            currentAdmissions?.map(renderAdmissionCard)
+            <>
+              {currentPagination.paginatedData.map(renderAdmissionCard)}
+              <DataTablePagination
+                currentPage={currentPagination.currentPage}
+                totalPages={currentPagination.totalPages}
+                onPageChange={currentPagination.goToPage}
+                hasNextPage={currentPagination.hasNextPage}
+                hasPrevPage={currentPagination.hasPrevPage}
+              />
+            </>
           )}
         </TabsContent>
 
@@ -367,7 +383,16 @@ export default function HospitalAdmissionsPage() {
               description="No patients have been discharged today. Discharged patients will appear here."
             />
           ) : (
-            dischargedToday.map(renderAdmissionCard)
+            <>
+              {dischargedTodayPagination.paginatedData.map(renderAdmissionCard)}
+              <DataTablePagination
+                currentPage={dischargedTodayPagination.currentPage}
+                totalPages={dischargedTodayPagination.totalPages}
+                onPageChange={dischargedTodayPagination.goToPage}
+                hasNextPage={dischargedTodayPagination.hasNextPage}
+                hasPrevPage={dischargedTodayPagination.hasPrevPage}
+              />
+            </>
           )}
         </TabsContent>
 
@@ -384,7 +409,16 @@ export default function HospitalAdmissionsPage() {
               } : undefined}
             />
           ) : (
-            allAdmissions?.map(renderAdmissionCard)
+            <>
+              {allPagination.paginatedData.map(renderAdmissionCard)}
+              <DataTablePagination
+                currentPage={allPagination.currentPage}
+                totalPages={allPagination.totalPages}
+                onPageChange={allPagination.goToPage}
+                hasNextPage={allPagination.hasNextPage}
+                hasPrevPage={allPagination.hasPrevPage}
+              />
+            </>
           )}
         </TabsContent>
       </Tabs>
