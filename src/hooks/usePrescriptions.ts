@@ -146,7 +146,7 @@ export const useUpdatePrescription = () => {
     mutationFn: async ({
       id,
       ...data
-    }: Partial<CreatePrescriptionInput> & { id: string }) => {
+    }: Partial<CreatePrescriptionInput> & { id: string; is_active?: boolean }) => {
       const updateData: Record<string, unknown> = {};
       
       if (data.diagnosis !== undefined) updateData.diagnosis = data.diagnosis;
@@ -156,6 +156,7 @@ export const useUpdatePrescription = () => {
       if (data.medications !== undefined) {
         updateData.medications = data.medications as unknown as Json;
       }
+      if (data.is_active !== undefined) updateData.is_active = data.is_active;
 
       const { error } = await supabase
         .from("prescriptions")
@@ -166,10 +167,38 @@ export const useUpdatePrescription = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctor-prescriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-prescriptions"] });
       toast.success("Prescription updated successfully!");
     },
     onError: (error) => {
       toast.error("Failed to update prescription: " + error.message);
+    },
+  });
+};
+
+export const useTogglePrescriptionStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from("prescriptions")
+        .update({ is_active })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["doctor-prescriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-prescriptions"] });
+      toast.success(
+        variables.is_active
+          ? "Prescription marked as active"
+          : "Prescription marked as completed"
+      );
+    },
+    onError: (error) => {
+      toast.error("Failed to update prescription status: " + error.message);
     },
   });
 };
