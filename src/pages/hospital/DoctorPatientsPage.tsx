@@ -20,6 +20,8 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import PatientDetailsDialog from "@/components/hospital/PatientDetailsDialog";
 import AddPatientDialog from "@/components/hospital/AddPatientDialog";
+import { usePagination } from "@/hooks/usePagination";
+import { DataTablePagination } from "@/components/admin/DataTablePagination";
 
 interface OutletContext {
   hospital: Hospital;
@@ -38,7 +40,17 @@ export default function DoctorPatientsPage() {
   const filteredPatients = patients?.filter((patient) => {
     const name = patient.patient_profile?.display_name?.toLowerCase() || "";
     return name.includes(searchQuery.toLowerCase());
-  });
+  }) || [];
+
+  // Pagination
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedPatients,
+    goToPage,
+    hasNextPage,
+    hasPrevPage,
+  } = usePagination({ data: filteredPatients, itemsPerPage: 9 });
 
   const handleViewPatient = (patientId: string) => {
     updateAccess.mutate(patientId);
@@ -88,9 +100,10 @@ export default function DoctorPatientsPage() {
       </div>
 
       {/* Patients Grid */}
-      {filteredPatients && filteredPatients.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPatients.map((patient) => {
+      {filteredPatients.length > 0 ? (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {paginatedPatients.map((patient) => {
             const profile = patient.patient_profile;
             const age = profile?.date_of_birth
               ? Math.floor(
@@ -160,9 +173,17 @@ export default function DoctorPatientsPage() {
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          <DataTablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPrevPage={hasPrevPage}
+          />
+        </>
       ) : (
         <Card>
           <CardContent className="py-12 text-center">

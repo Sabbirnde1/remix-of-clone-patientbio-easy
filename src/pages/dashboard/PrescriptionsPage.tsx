@@ -11,6 +11,8 @@ import { useHealthRecords } from "@/hooks/useHealthRecords";
 import { DigitalPrescriptionsSection } from "@/components/dashboard/DigitalPrescriptionsSection";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
+import { usePagination } from "@/hooks/usePagination";
+import { DataTablePagination } from "@/components/admin/DataTablePagination";
 
 type HealthRecord = Tables<"health_records">;
 
@@ -33,6 +35,16 @@ const PrescriptionsPage = () => {
   const filteredRecords = records.filter(
     (record) => record.disease_category === activeTab
   );
+
+  // Pagination for filtered records
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedRecords,
+    goToPage,
+    hasNextPage,
+    hasPrevPage,
+  } = usePagination({ data: filteredRecords, itemsPerPage: 8 });
 
   // Get signed URL for a record
   const fetchSignedUrl = async (record: HealthRecord) => {
@@ -159,8 +171,9 @@ const PrescriptionsPage = () => {
                       No records in this category
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredRecords.map((record) => (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {paginatedRecords.map((record) => (
                         <Card key={record.id} className="overflow-hidden">
                           <div className="relative">
                             {/* Preview thumbnail */}
@@ -252,8 +265,16 @@ const PrescriptionsPage = () => {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                      <DataTablePagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={goToPage}
+                        hasNextPage={hasNextPage}
+                        hasPrevPage={hasPrevPage}
+                      />
+                    </>
                   )}
                 </TabsContent>
               ))}
