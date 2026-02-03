@@ -713,9 +713,11 @@ export type Database = {
           display_name: string | null
           gender: string | null
           id: string
+          is_guest_patient: boolean | null
           location: string | null
           notification_email_enabled: boolean
           phone: string | null
+          registered_by_hospital_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -726,9 +728,11 @@ export type Database = {
           display_name?: string | null
           gender?: string | null
           id?: string
+          is_guest_patient?: boolean | null
           location?: string | null
           notification_email_enabled?: boolean
           phone?: string | null
+          registered_by_hospital_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -739,13 +743,23 @@ export type Database = {
           display_name?: string | null
           gender?: string | null
           id?: string
+          is_guest_patient?: boolean | null
           location?: string | null
           notification_email_enabled?: boolean
           phone?: string | null
+          registered_by_hospital_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_registered_by_hospital_id_fkey"
+            columns: ["registered_by_hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
