@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Receipt, CreditCard, Eye, XCircle, IndianRupee, Trash2, Printer } from "lucide-react";
+import PatientLookupInput from "@/components/hospital/PatientLookupInput";
 import { format } from "date-fns";
 import InvoicePrintView from "@/components/hospital/InvoicePrintView";
 
@@ -216,14 +217,11 @@ export default function HospitalBillingPage() {
               <DialogTitle>Create New Invoice</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Patient ID</Label>
-                <Input
-                  value={newInvoice.patientId}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, patientId: e.target.value })}
-                  placeholder="Enter patient UUID"
-                />
-              </div>
+              <PatientLookupInput
+                value={newInvoice.patientId}
+                onChange={(patientId) => setNewInvoice({ ...newInvoice, patientId })}
+                label="Patient"
+              />
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
