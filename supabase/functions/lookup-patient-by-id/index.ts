@@ -60,12 +60,11 @@ Deno.serve(async (req) => {
     console.log(`Looking up patient with code: ${normalizedCode}`);
 
     // Search for user_profile where user_id starts with the patient code
-    // Using ILIKE for case-insensitive matching
+    // We need to cast UUID to text for pattern matching
+    // First get all profiles and filter in code, or use a text comparison
     const { data: profiles, error: profileError } = await supabase
       .from("user_profiles")
-      .select("user_id, display_name, date_of_birth, gender")
-      .ilike("user_id", `${normalizedCode}%`)
-      .limit(1);
+      .select("user_id, display_name, date_of_birth, gender");
 
     if (profileError) {
       console.error("Error searching for patient:", profileError);
@@ -75,7 +74,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!profiles || profiles.length === 0) {
+    // Filter profiles where user_id starts with the patient code (case-insensitive)
+    const matchingProfiles = profiles?.filter((p) =>
+      p.user_id.toLowerCase().startsWith(normalizedCode)
+    ) || [];
+
+    if (matchingProfiles.length === 0) {
       console.log("No patient found with code:", normalizedCode);
       return new Response(
         JSON.stringify({ found: false }),
@@ -83,7 +87,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const patient = profiles[0];
+    const patient = matchingProfiles[0];
 
     // Calculate age if date_of_birth is available
     let age: number | null = null;
