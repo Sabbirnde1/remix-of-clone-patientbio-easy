@@ -1,171 +1,110 @@
 
-# Plan: Show Doctor Info on Patient's Prescription View
 
-## Overview
-Patients currently have no way to view digital prescriptions issued by doctors through the Doctor Portal. This plan creates a dedicated section in the patient dashboard to display these prescriptions with the prescribing doctor's name and details.
+# Plan: Fix Prescription Creation RLS Error
 
----
-
-## Current State Analysis
-
-1. **Missing Feature**: The patient dashboard's "Prescriptions" page only shows uploaded health records (file uploads), not digital prescriptions issued by doctors
-2. **Existing Hook**: `usePatientPrescriptions` exists but isn't used anywhere and doesn't fetch doctor info
-3. **Doctor Info Available**: The `doctor_profiles` table contains doctor details (full_name, specialty, qualification, phone)
+## Problem Summary
+Doctors cannot create prescriptions because the RLS policy requires `has_role(auth.uid(), 'doctor')` to be true, but the 'doctor' role is never successfully assigned during onboarding.
 
 ---
 
-## Implementation Plan
+## Root Cause Analysis
 
-### 1. Enhance usePatientPrescriptions Hook
-**File:** `src/hooks/usePrescriptions.ts`
+1. **RLS Policy on `user_roles` table** - Only admins can insert roles:
+   ```sql
+   CREATE POLICY "Admins can manage roles"
+   ON public.user_roles
+   FOR ALL
+   USING (public.has_role(auth.uid(), 'admin'))
+   ```
 
-Add doctor information fetching to the patient prescriptions query:
-- Query prescriptions for the current patient
-- Fetch doctor profile info using the doctor_id from each prescription
-- Map doctor_name and specialty to each prescription
+2. **Silent failure in onboarding** - The `useCreateDoctorProfile` hook tries to insert a 'doctor' role but fails silently due to RLS:
+   ```typescript
+   // This fails because user isn't an admin
+   const { error: roleError } = await supabase.from("user_roles").insert({
+     user_id: user.id,
+     role: "doctor",
+   });
+   ```
 
-### 2. Create Patient Prescription View Dialog
-**File:** `src/components/dashboard/PatientPrescriptionViewDialog.tsx` (new)
-
-A read-only view for patients to see prescription details:
-- Doctor info section (name, specialty, qualification, contact)
-- Prescription date
-- Diagnosis
-- Medications table
-- Instructions
-- Follow-up date
-- Status badge (active/completed)
-- Print button
-
-### 3. Add Prescriptions Section to Dashboard
-**File:** `src/pages/dashboard/PrescriptionsPage.tsx`
-
-Add a new "Digital Prescriptions" section above the health records:
-- Show prescriptions issued by doctors via the portal
-- Display doctor's name, specialty, date, and medication count
-- Click to view full prescription details
-- Filter by active/completed status
-- Empty state if no digital prescriptions
+3. **Prescription RLS requires role** - The prescription INSERT policy checks:
+   ```sql
+   WITH CHECK (
+     auth.uid() = doctor_id AND 
+     has_role(auth.uid(), 'doctor')
+   )
+   ```
 
 ---
 
-## Technical Details
+## Solution
 
-### Hook Enhancement
-```typescript
-// Update usePatientPrescriptions to fetch doctor info
-export const usePatientPrescriptions = () => {
-  const { user } = useAuth();
+Add an RLS policy that allows users to self-assign the 'doctor' role when creating their doctor profile. This is a controlled self-assignment because:
+- The user must be authenticated
+- They can only assign the role to themselves
+- They can only assign the 'doctor' role (not 'admin')
 
-  return useQuery({
-    queryKey: ["patient-prescriptions", user?.id],
-    queryFn: async (): Promise<Prescription[]> => {
-      if (!user?.id) return [];
+---
 
-      const { data: prescriptions, error } = await supabase
-        .from("prescriptions")
-        .select("*")
-        .eq("patient_id", user.id)
-        .order("created_at", { ascending: false });
+## Implementation
 
-      if (error) throw error;
-      if (!prescriptions?.length) return [];
+### Database Migration
 
-      // Fetch doctor profiles
-      const doctorIds = [...new Set(prescriptions.map(p => p.doctor_id))];
-      const { data: doctors } = await supabase
-        .from("doctor_profiles")
-        .select("user_id, full_name, specialty, qualification, phone")
-        .in("user_id", doctorIds);
+Add a new RLS policy to allow authenticated users to self-assign the 'doctor' role:
 
-      const doctorMap = new Map(
-        (doctors || []).map(d => [d.user_id, d])
-      );
-
-      return prescriptions.map(p => ({
-        ...p,
-        medications: parseMedications(p.medications),
-        doctor_name: doctorMap.get(p.doctor_id)?.full_name,
-        doctor_specialty: doctorMap.get(p.doctor_id)?.specialty,
-        doctor_qualification: doctorMap.get(p.doctor_id)?.qualification,
-      }));
-    },
-    enabled: !!user?.id,
-  });
-};
+```sql
+-- Allow users to self-assign doctor role
+-- This is secure because:
+-- 1. User can only assign to themselves (user_id = auth.uid())
+-- 2. Only 'doctor' role can be self-assigned
+-- 3. Prevents admin role escalation
+CREATE POLICY "Users can self-assign doctor role"
+ON public.user_roles
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  auth.uid() = user_id AND 
+  role = 'doctor'
+);
 ```
 
-### Interface Update
-```typescript
-export interface Prescription {
-  // ... existing fields
-  doctor_name?: string;
-  doctor_specialty?: string;
-  doctor_qualification?: string;
-}
-```
+### Fix Existing Doctor
 
-### Patient View Dialog
-- Similar to PrescriptionViewDialog but read-only (no edit/status toggle)
-- Shows doctor header instead of pulling from useDoctorProfile
-- Print functionality for patient's records
+Run a one-time SQL to fix the existing doctor profile that's missing their role:
 
-### UI Layout in PrescriptionsPage
-```
-+------------------------------------------+
-| Digital Prescriptions                     |
-| Prescriptions from your healthcare team   |
-+------------------------------------------+
-| [Active] [Completed]                      |
-+------------------------------------------+
-| +----------------+  +----------------+    |
-| | Dr. Name       |  | Dr. Name       |    |
-| | Specialty      |  | Specialty      |    |
-| | 3 medications  |  | 2 medications  |    |
-| | Jan 15, 2026   |  | Jan 10, 2026   |    |
-| | [View Details] |  | [View Details] |    |
-| +----------------+  +----------------+    |
-+------------------------------------------+
-| Health Records (existing section)         |
-+------------------------------------------+
+```sql
+INSERT INTO public.user_roles (user_id, role)
+SELECT user_id, 'doctor'::app_role
+FROM public.doctor_profiles
+ON CONFLICT (user_id, role) DO NOTHING;
 ```
 
 ---
 
-## Files to Create/Modify
+## Files to Modify
 
 | File | Action | Changes |
 |------|--------|---------|
-| `src/hooks/usePrescriptions.ts` | Modify | Add doctor info fetching to usePatientPrescriptions |
-| `src/components/dashboard/PatientPrescriptionViewDialog.tsx` | Create | Read-only prescription view with doctor info |
-| `src/pages/dashboard/PrescriptionsPage.tsx` | Modify | Add Digital Prescriptions section with doctor info display |
+| Database Migration | Create | Add RLS policy for doctor role self-assignment |
+
+No code changes required - the existing `useCreateDoctorProfile` hook already attempts to insert the role correctly.
 
 ---
 
-## Database Considerations
+## Security Considerations
 
-The `doctor_profiles` table already has an RLS policy that allows patients to view connected doctors' profiles:
-```sql
-Policy: "Patients can view connected doctors profiles"
-Using Expression: EXISTS (
-  SELECT 1 FROM doctor_patient_access dpa
-  WHERE dpa.patient_id = auth.uid() 
-  AND dpa.doctor_id = doctor_profiles.user_id 
-  AND dpa.is_active = true
-)
-```
-
-However, this only works for connected doctors. For prescriptions, we need doctors who have issued prescriptions (even if not formally connected). Since prescriptions inherently create a relationship, we may need to add an additional RLS policy or fetch doctor info via an edge function.
-
-**Recommended approach**: Use the existing policy since doctors who issue prescriptions typically have an active doctor_patient_access record. If issues arise, we can create a simple edge function to fetch doctor details for prescriptions.
+This approach is secure because:
+- Users can only assign roles to themselves (`user_id = auth.uid()`)
+- Only the 'doctor' role can be self-assigned (not 'admin' or 'hospital_admin')
+- The doctor profile creation flow already validates the user is authenticated
+- Admin roles remain protected by existing policies
 
 ---
 
 ## Expected Outcome
 
 After implementation:
-- Patients can view all digital prescriptions issued to them by any doctor
-- Each prescription shows the prescribing doctor's name, specialty, and qualifications
-- Patients can view full prescription details including medications and instructions
-- Patients can print prescriptions for their records
-- Clear visual distinction between digital prescriptions and uploaded health records
+- New doctors completing onboarding will automatically get the 'doctor' role
+- Existing doctors will have their missing role assigned via migration
+- Doctors will be able to create prescriptions without RLS errors
+- Security is maintained - users cannot escalate to admin privileges
+
