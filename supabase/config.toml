@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.register-hospital]
 verify_jwt = false
+
+[functions.send-appointment-reminder]
+verify_jwt = false
+
+[functions.schedule-appointment-reminders]
+verify_jwt = false
