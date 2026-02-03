@@ -228,6 +228,44 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_patient_access: {
+        Row: {
+          access_token_id: string | null
+          doctor_id: string
+          granted_at: string | null
+          id: string
+          is_active: boolean | null
+          last_accessed_at: string | null
+          patient_id: string
+        }
+        Insert: {
+          access_token_id?: string | null
+          doctor_id: string
+          granted_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          patient_id: string
+        }
+        Update: {
+          access_token_id?: string | null
+          doctor_id?: string
+          granted_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_patient_access_access_token_id_fkey"
+            columns: ["access_token_id"]
+            isOneToOne: false
+            referencedRelation: "access_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_profiles: {
         Row: {
           avatar_url: string | null
@@ -529,6 +567,59 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      prescriptions: {
+        Row: {
+          created_at: string | null
+          diagnosis: string | null
+          doctor_id: string
+          follow_up_date: string | null
+          hospital_id: string | null
+          id: string
+          instructions: string | null
+          is_active: boolean | null
+          medications: Json
+          notes: string | null
+          patient_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          diagnosis?: string | null
+          doctor_id: string
+          follow_up_date?: string | null
+          hospital_id?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          medications?: Json
+          notes?: string | null
+          patient_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          diagnosis?: string | null
+          doctor_id?: string
+          follow_up_date?: string | null
+          hospital_id?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          medications?: Json
+          notes?: string | null
+          patient_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_content: {
         Row: {

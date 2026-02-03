@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPlus, Settings, ArrowLeft, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, Settings, ArrowLeft, Building2, Stethoscope, Pill } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Hospital } from "@/types/hospital";
 import {
@@ -19,16 +19,17 @@ import { Button } from "@/components/ui/button";
 interface HospitalSidebarProps {
   hospital: Hospital;
   isAdmin: boolean;
+  isDoctor?: boolean;
 }
 
-export function HospitalSidebar({ hospital, isAdmin }: HospitalSidebarProps) {
+export function HospitalSidebar({ hospital, isAdmin, isDoctor }: HospitalSidebarProps) {
   const location = useLocation();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
 
   const baseUrl = `/hospital/${hospital.id}`;
 
-  const menuItems = [
+  const managementItems = [
     { title: "Dashboard", url: baseUrl, icon: LayoutDashboard },
     { title: "Staff", url: `${baseUrl}/staff`, icon: Users },
     ...(isAdmin
@@ -37,6 +38,11 @@ export function HospitalSidebar({ hospital, isAdmin }: HospitalSidebarProps) {
           { title: "Settings", url: `${baseUrl}/settings`, icon: Settings },
         ]
       : []),
+  ];
+
+  const doctorItems = [
+    { title: "My Patients", url: `${baseUrl}/patients`, icon: Stethoscope },
+    { title: "Prescriptions", url: `${baseUrl}/prescriptions`, icon: Pill },
   ];
 
   const isActive = (path: string) => {
@@ -66,7 +72,7 @@ export function HospitalSidebar({ hospital, isAdmin }: HospitalSidebarProps) {
           <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {managementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -83,6 +89,31 @@ export function HospitalSidebar({ hospital, isAdmin }: HospitalSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Doctor Portal Section */}
+        {isDoctor && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Doctor Portal</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {doctorItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <Link to={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-4">
