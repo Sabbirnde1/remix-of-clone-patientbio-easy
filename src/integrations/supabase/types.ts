@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_notifications: {
+        Row: {
+          access_count_at_notification: number | null
+          created_at: string
+          email_sent_to: string | null
+          id: string
+          notification_type: string
+          sent_at: string
+          token_id: string | null
+          user_id: string
+        }
+        Insert: {
+          access_count_at_notification?: number | null
+          created_at?: string
+          email_sent_to?: string | null
+          id?: string
+          notification_type?: string
+          sent_at?: string
+          token_id?: string | null
+          user_id: string
+        }
+        Update: {
+          access_count_at_notification?: number | null
+          created_at?: string
+          email_sent_to?: string | null
+          id?: string
+          notification_type?: string
+          sent_at?: string
+          token_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_notifications_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "access_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       access_tokens: {
         Row: {
           access_count: number | null
@@ -359,6 +400,7 @@ export type Database = {
           gender: string | null
           id: string
           location: string | null
+          notification_email_enabled: boolean
           phone: string | null
           updated_at: string | null
           user_id: string
@@ -371,6 +413,7 @@ export type Database = {
           gender?: string | null
           id?: string
           location?: string | null
+          notification_email_enabled?: boolean
           phone?: string | null
           updated_at?: string | null
           user_id: string
@@ -383,6 +426,7 @@ export type Database = {
           gender?: string | null
           id?: string
           location?: string | null
+          notification_email_enabled?: boolean
           phone?: string | null
           updated_at?: string | null
           user_id?: string

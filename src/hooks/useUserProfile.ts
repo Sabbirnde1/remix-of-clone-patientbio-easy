@@ -12,6 +12,7 @@ export interface UserProfile {
   gender: string | null;
   location: string | null;
   phone: string | null;
+  notification_email_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +24,7 @@ export interface UserProfileUpdate {
   gender?: string | null;
   location?: string | null;
   phone?: string | null;
+  notification_email_enabled?: boolean;
 }
 
 export const useUserProfile = () => {

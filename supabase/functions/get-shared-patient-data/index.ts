@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
     }
 
     const userId = tokenData.user_id;
+    const newAccessCount = (tokenData.access_count || 0) + 1;
     console.log("Token valid, fetching data for user:", userId);
 
     // Update access tracking
@@ -88,9 +89,24 @@ Deno.serve(async (req) => {
       .from("access_tokens")
       .update({
         accessed_at: new Date().toISOString(),
-        access_count: (tokenData.access_count || 0) + 1,
+        access_count: newAccessCount,
       })
       .eq("id", tokenData.id);
+
+    // Trigger notification (fire and forget - don't wait for response)
+    const notificationUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-access-notification`;
+    fetch(notificationUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify({
+        token_id: tokenData.id,
+        user_id: userId,
+        access_count: newAccessCount,
+      }),
+    }).catch((err) => console.error("Failed to trigger notification:", err));
 
     // Fetch patient data in parallel
     const [profileRes, healthRes, recordsRes] = await Promise.all([
