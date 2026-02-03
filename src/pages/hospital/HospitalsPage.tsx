@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Plus, Search, MapPin, Phone, ArrowRight, Stethoscope, FlaskConical, Pill } from "lucide-react";
+import { Building2, Plus, Search, MapPin, Phone, ArrowRight, Stethoscope, FlaskConical, Pill, LogIn } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { HospitalType } from "@/types/hospital";
@@ -45,14 +45,22 @@ export default function HospitalsPage() {
           </p>
         </div>
 
-        {/* Action Button */}
-        <div className="flex justify-center mb-8">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-center gap-3 mb-8">
           <Button asChild size="lg">
             <Link to="/hospitals/register">
               <Plus className="h-4 w-4 mr-2" />
               Register Your Facility
             </Link>
           </Button>
+          {!user && (
+            <Button asChild size="lg" variant="outline">
+              <Link to="/hospitals/login">
+                <LogIn className="h-4 w-4 mr-2" />
+                Hospital Login
+              </Link>
+            </Button>
+          )}
         </div>
 
         {/* My Hospitals Section */}
