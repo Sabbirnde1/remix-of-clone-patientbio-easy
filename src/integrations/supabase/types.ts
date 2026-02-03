@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_tokens: {
+        Row: {
+          access_count: number | null
+          accessed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          is_revoked: boolean | null
+          label: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          access_count?: number | null
+          accessed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_revoked?: boolean | null
+          label?: string | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          access_count?: number | null
+          accessed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_revoked?: boolean | null
+          label?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string | null
@@ -44,6 +80,45 @@ export type Database = {
           read_at?: string | null
           status?: string | null
           subject?: string
+        }
+        Relationships: []
+      }
+      doctor_connections: {
+        Row: {
+          created_at: string
+          doctor_name: string
+          email: string | null
+          hospital_clinic: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          specialty: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_name: string
+          email?: string | null
+          hospital_clinic?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doctor_name?: string
+          email?: string | null
+          hospital_clinic?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
