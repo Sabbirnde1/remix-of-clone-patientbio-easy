@@ -1,141 +1,171 @@
 
-
-# Plan: Fix My Patients UI Issues
+# Plan: Show Doctor Info on Patient's Prescription View
 
 ## Overview
-This plan addresses multiple UI/UX issues in the Doctor Portal's My Patients page to improve responsiveness, visual hierarchy, and overall usability across all device sizes.
+Patients currently have no way to view digital prescriptions issued by doctors through the Doctor Portal. This plan creates a dedicated section in the patient dashboard to display these prescriptions with the prescribing doctor's name and details.
 
 ---
 
-## Issues Identified
+## Current State Analysis
 
-1. **Filter section layout** - Filter chips overflow on mobile, vertical divider doesn't translate well
-2. **Page header responsiveness** - Title and "Add Patient" button need better mobile stacking
-3. **Patient card density** - Action buttons cramped, information hierarchy unclear
-4. **Inconsistent spacing** - Various spacing issues between sections
-5. **Mobile scroll behavior** - Filters take up too much vertical space on small screens
+1. **Missing Feature**: The patient dashboard's "Prescriptions" page only shows uploaded health records (file uploads), not digital prescriptions issued by doctors
+2. **Existing Hook**: `usePatientPrescriptions` exists but isn't used anywhere and doesn't fetch doctor info
+3. **Doctor Info Available**: The `doctor_profiles` table contains doctor details (full_name, specialty, qualification, phone)
 
 ---
 
 ## Implementation Plan
 
-### 1. Improve Page Header Responsiveness
-**File:** `src/pages/doctor/DoctorPatientsPage.tsx`
+### 1. Enhance usePatientPrescriptions Hook
+**File:** `src/hooks/usePrescriptions.ts`
 
-- Change header from `flex justify-between` to a responsive stack
-- On mobile: Title stacks above the button with full width
-- On desktop: Keep side-by-side layout
+Add doctor information fetching to the patient prescriptions query:
+- Query prescriptions for the current patient
+- Fetch doctor profile info using the doctor_id from each prescription
+- Map doctor_name and specialty to each prescription
 
-### 2. Refactor Filter Section
-**File:** `src/pages/doctor/DoctorPatientsPage.tsx`
+### 2. Create Patient Prescription View Dialog
+**File:** `src/components/dashboard/PatientPrescriptionViewDialog.tsx` (new)
 
-- Wrap filters in a collapsible section on mobile (optional show/hide)
-- Replace vertical divider separator with a responsive layout:
-  - Mobile: Stack status filters above date filters with proper labels
-  - Desktop: Keep horizontal layout with divider
-- Add a filter toggle button that shows active filter count
-- Improve chip button sizing for better touch targets
+A read-only view for patients to see prescription details:
+- Doctor info section (name, specialty, qualification, contact)
+- Prescription date
+- Diagnosis
+- Medications table
+- Instructions
+- Follow-up date
+- Status badge (active/completed)
+- Print button
 
-### 3. Enhance Patient Card Layout
-**File:** `src/pages/doctor/DoctorPatientsPage.tsx`
+### 3. Add Prescriptions Section to Dashboard
+**File:** `src/pages/dashboard/PrescriptionsPage.tsx`
 
-- Improve card grid responsiveness: 1 column mobile, 2 tablet, 3 desktop
-- Better visual separation between patient info and actions
-- Stack action buttons vertically on very small screens
-- Add subtle border or separator before action buttons
-- Improve badge and date display alignment
-
-### 4. Add Mobile-Optimized Filter Toggle
-**File:** `src/pages/doctor/DoctorPatientsPage.tsx`
-
-- Add a "Filters" button on mobile that toggles filter visibility
-- Show active filter count badge on the toggle button
-- Keep filters always visible on desktop (md+)
-
-### 5. Polish Patient Card Details
-**File:** `src/pages/doctor/DoctorPatientsPage.tsx`
-
-- Improve the gender/age grid layout
-- Better truncation handling for long names
-- Consistent icon sizing and alignment
+Add a new "Digital Prescriptions" section above the health records:
+- Show prescriptions issued by doctors via the portal
+- Display doctor's name, specialty, date, and medication count
+- Click to view full prescription details
+- Filter by active/completed status
+- Empty state if no digital prescriptions
 
 ---
 
 ## Technical Details
 
-### Header Changes
-```tsx
-// Current
-<div className="flex items-center justify-between">
+### Hook Enhancement
+```typescript
+// Update usePatientPrescriptions to fetch doctor info
+export const usePatientPrescriptions = () => {
+  const { user } = useAuth();
 
-// Updated
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  return useQuery({
+    queryKey: ["patient-prescriptions", user?.id],
+    queryFn: async (): Promise<Prescription[]> => {
+      if (!user?.id) return [];
+
+      const { data: prescriptions, error } = await supabase
+        .from("prescriptions")
+        .select("*")
+        .eq("patient_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      if (!prescriptions?.length) return [];
+
+      // Fetch doctor profiles
+      const doctorIds = [...new Set(prescriptions.map(p => p.doctor_id))];
+      const { data: doctors } = await supabase
+        .from("doctor_profiles")
+        .select("user_id, full_name, specialty, qualification, phone")
+        .in("user_id", doctorIds);
+
+      const doctorMap = new Map(
+        (doctors || []).map(d => [d.user_id, d])
+      );
+
+      return prescriptions.map(p => ({
+        ...p,
+        medications: parseMedications(p.medications),
+        doctor_name: doctorMap.get(p.doctor_id)?.full_name,
+        doctor_specialty: doctorMap.get(p.doctor_id)?.specialty,
+        doctor_qualification: doctorMap.get(p.doctor_id)?.qualification,
+      }));
+    },
+    enabled: !!user?.id,
+  });
+};
 ```
 
-### Filter Section Changes
-```tsx
-// Add mobile filter toggle state
-const [filtersOpen, setFiltersOpen] = useState(false);
-
-// Wrap filters in responsive container
-<div className="space-y-4">
-  {/* Mobile filter toggle */}
-  <div className="flex flex-col sm:flex-row gap-4">
-    <div className="relative flex-1">
-      {/* Search input */}
-    </div>
-    <Button 
-      variant="outline" 
-      className="sm:hidden"
-      onClick={() => setFiltersOpen(!filtersOpen)}
-    >
-      <Filter /> Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
-    </Button>
-  </div>
-  
-  {/* Collapsible filter chips - always visible on desktop */}
-  <div className={cn(
-    "flex flex-wrap gap-2",
-    !filtersOpen && "hidden sm:flex"
-  )}>
-    {/* Status filters */}
-    {/* Date filters */}
-  </div>
-</div>
+### Interface Update
+```typescript
+export interface Prescription {
+  // ... existing fields
+  doctor_name?: string;
+  doctor_specialty?: string;
+  doctor_qualification?: string;
+}
 ```
 
-### Patient Card Button Layout
-```tsx
-// Current
-<div className="mt-4 flex gap-2">
+### Patient View Dialog
+- Similar to PrescriptionViewDialog but read-only (no edit/status toggle)
+- Shows doctor header instead of pulling from useDoctorProfile
+- Print functionality for patient's records
 
-// Updated - stack on small screens
-<div className="mt-4 pt-3 border-t flex flex-col xs:flex-row gap-2">
-  <Button size="sm" variant="outline" className="flex-1">
-    View Records
-  </Button>
-  <Button size="sm" className="flex-1">
-    Prescribe
-  </Button>
-</div>
+### UI Layout in PrescriptionsPage
+```
++------------------------------------------+
+| Digital Prescriptions                     |
+| Prescriptions from your healthcare team   |
++------------------------------------------+
+| [Active] [Completed]                      |
++------------------------------------------+
+| +----------------+  +----------------+    |
+| | Dr. Name       |  | Dr. Name       |    |
+| | Specialty      |  | Specialty      |    |
+| | 3 medications  |  | 2 medications  |    |
+| | Jan 15, 2026   |  | Jan 10, 2026   |    |
+| | [View Details] |  | [View Details] |    |
+| +----------------+  +----------------+    |
++------------------------------------------+
+| Health Records (existing section)         |
++------------------------------------------+
 ```
 
 ---
 
-## Files to Modify
+## Files to Create/Modify
 
-| File | Changes |
-|------|---------|
-| `src/pages/doctor/DoctorPatientsPage.tsx` | Header responsiveness, filter layout, patient card improvements |
+| File | Action | Changes |
+|------|--------|---------|
+| `src/hooks/usePrescriptions.ts` | Modify | Add doctor info fetching to usePatientPrescriptions |
+| `src/components/dashboard/PatientPrescriptionViewDialog.tsx` | Create | Read-only prescription view with doctor info |
+| `src/pages/dashboard/PrescriptionsPage.tsx` | Modify | Add Digital Prescriptions section with doctor info display |
+
+---
+
+## Database Considerations
+
+The `doctor_profiles` table already has an RLS policy that allows patients to view connected doctors' profiles:
+```sql
+Policy: "Patients can view connected doctors profiles"
+Using Expression: EXISTS (
+  SELECT 1 FROM doctor_patient_access dpa
+  WHERE dpa.patient_id = auth.uid() 
+  AND dpa.doctor_id = doctor_profiles.user_id 
+  AND dpa.is_active = true
+)
+```
+
+However, this only works for connected doctors. For prescriptions, we need doctors who have issued prescriptions (even if not formally connected). Since prescriptions inherently create a relationship, we may need to add an additional RLS policy or fetch doctor info via an edge function.
+
+**Recommended approach**: Use the existing policy since doctors who issue prescriptions typically have an active doctor_patient_access record. If issues arise, we can create a simple edge function to fetch doctor details for prescriptions.
 
 ---
 
 ## Expected Outcome
 
 After implementation:
-- Page header stacks properly on mobile devices
-- Filters are collapsible on mobile to save vertical space
-- Patient cards have cleaner visual hierarchy with proper action button layout
-- Touch targets are appropriately sized for mobile users
-- No horizontal overflow or crowded elements on any screen size
-
+- Patients can view all digital prescriptions issued to them by any doctor
+- Each prescription shows the prescribing doctor's name, specialty, and qualifications
+- Patients can view full prescription details including medications and instructions
+- Patients can print prescriptions for their records
+- Clear visual distinction between digital prescriptions and uploaded health records
