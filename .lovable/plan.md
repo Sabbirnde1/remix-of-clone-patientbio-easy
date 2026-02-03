@@ -1,231 +1,215 @@
 
-# QR Code Generation Implementation Plan
+# MVP Status Report and Implementation Plan
 
-This plan adds real QR code generation functionality to the Patient Dashboard, enabling patients to generate, view, download, and share their unique patient QR codes for instant identification by healthcare providers.
+## Current MVP State
 
-## Overview
+### Fully Functional Features (Ready to Ship)
 
-The implementation will use the `qrcode.react` library to generate actual QR codes encoding the patient's unique ID. Both the **QRCodePage** and **ShareDataPage** will be updated to display real, functional QR codes with download and share capabilities.
+| Feature | Status | Details |
+|---------|--------|---------|
+| Authentication | Complete | Email/password signup, login, email verification, password reset |
+| Dashboard Home | Complete | Welcome section, dynamic summary cards, onboarding checklist, quick actions |
+| Profile Page | Complete | Full CRUD for user demographics (name, DOB, gender, location, phone) |
+| Health Data Page | Complete | Full CRUD for clinical info (blood group, allergies, medications, emergency contact) |
+| Upload Page | Complete | Drag-drop file upload with metadata, category selection, progress indicator |
+| Prescriptions Page | Complete | Tabbed gallery by disease category, signed URL viewing, delete functionality |
+| QR Code Page | Complete | Real QR generation, download as PNG, share functionality |
+| Share Data Page | Complete | Time-limited access link creation (1h/24h/7d/30d), copy, revoke, delete |
+| My Doctors Page | Complete | Full CRUD for healthcare provider management |
+| Public Share Page | Complete | Token validation, expiry checking, read-only patient data view |
+
+### Assessment: Your MVP is Complete
+
+All core features are functional. The product delivers on its promise: patients can store their health records, manage their data, and share it securely with healthcare providers via time-limited links.
+
+---
+
+## Recommended Next Steps (Priority Order)
+
+### Priority 1: End-to-End Testing and Bug Fixes
+**Effort: Low | Impact: Critical**
+
+Before launching, thoroughly test all user flows to catch any edge cases.
+
+**Test Scenarios:**
+1. New user signup to first record upload
+2. Share link creation and provider access in incognito
+3. Token revocation and expired link handling
+4. File upload with various formats (PDF, JPEG, PNG)
+5. Mobile responsiveness across all pages
+
+---
+
+### Priority 2: Onboarding Polish
+**Effort: Low | Impact: Medium**
+
+Add "Add a doctor" to the onboarding checklist and show counts on dashboard cards.
+
+**Changes Required:**
+- Update `DashboardHome.tsx` to import `useDoctorConnections` hook
+- Add fourth checklist item: "Add your first healthcare provider"
+- Update summary cards to show doctor count
+- Mark checklist complete when `doctors.length > 0`
+
+---
+
+### Priority 3: Direct Share to Doctors
+**Effort: Medium | Impact: High**
+
+Allow patients to send access links directly to saved doctors via pre-filled message.
+
+**Implementation:**
+1. Add a "Share with Doctor" button on ShareDataPage
+2. Create a dialog to select from saved doctors
+3. When doctor selected:
+   - Auto-create a labeled access link (e.g., "For Dr. Smith")
+   - Open mailto: or copy pre-formatted message with the link
+4. Track which doctors have received which links
+
+**Technical Details:**
+- Create new database table `doctor_share_history` to track shares
+- Add RLS policies for user ownership
+- Add UI to show sharing history per doctor
+
+---
+
+### Priority 4: Share View Document Access
+**Effort: Medium | Impact: High**
+
+Currently, providers can see record titles but cannot view actual documents.
+
+**Implementation:**
+1. Add "View Document" buttons on ShareViewPage
+2. Generate signed URLs on-demand for authorized tokens
+3. Implement a backend edge function to:
+   - Validate the access token
+   - Generate short-lived signed URLs (5 minutes)
+   - Return the URL to the provider
+
+**Technical Details:**
+- Create edge function `generate-document-url`
+- Accept token + record_id as parameters
+- Validate token is active and not expired
+- Return signed URL for the requested document
+
+---
+
+### Priority 5: Email Notifications
+**Effort: Medium | Impact: Medium**
+
+Notify patients when their shared links are accessed.
+
+**Implementation:**
+1. Create `access_notifications` table
+2. Add trigger on `access_tokens` update (when `access_count` changes)
+3. Create edge function to send email via Resend/SendGrid
+4. Add notification preferences in user profile
+
+---
+
+### Priority 6: Mobile App Readiness
+**Effort: Low | Impact: Medium**
+
+Ensure the PWA is installable and works offline for viewing cached data.
+
+**Implementation:**
+1. Add `manifest.json` with app icons and metadata
+2. Register service worker for offline caching
+3. Cache profile and health data for offline viewing
+4. Add "Install App" prompt on mobile devices
+
+---
+
+## Implementation Order Summary
 
 ```text
+Phase 1: Launch Prep (This Week)
 +------------------------------------------+
-|              My QR Code Page             |
+| 1. End-to-end testing                    |
+| 2. Add "Add doctor" to onboarding        |
+| 3. Show doctor count on dashboard        |
 +------------------------------------------+
-|                                          |
-|    +----------------------------+        |
-|    |                            |        |
-|    |     [Real QR Code SVG]     |        |
-|    |     Encoding Patient ID    |        |
-|    |                            |        |
-|    +----------------------------+        |
-|                                          |
-|         Patient ID: A1B2C3D4             |
-|         [Copy ID Button]                 |
-|                                          |
-|    [Download PNG]    [Share]             |
-|                                          |
+
+Phase 2: Core Enhancement (Week 2)
++------------------------------------------+
+| 4. Direct share to saved doctors         |
+| 5. Document viewing for providers        |
++------------------------------------------+
+
+Phase 3: Engagement (Week 3+)
++------------------------------------------+
+| 6. Email notifications                   |
+| 7. Mobile PWA optimization               |
 +------------------------------------------+
 ```
 
-## Features
+---
 
-### 1. QR Code Generation
-- Generate QR codes encoding the patient's unique ID
-- Use SVG format for crisp rendering at any size
-- Customizable colors to match brand (purple/violet theme)
+## Recommended Immediate Action
 
-### 2. Download Functionality
-- Download QR code as PNG image
-- Filename includes patient ID for easy identification
-- High-resolution output for printing
+Start with **Priority 2: Onboarding Polish** - it's quick to implement (under 30 minutes) and makes the dashboard feel complete by integrating the doctors feature into the onboarding flow.
 
-### 3. Share Functionality
-- Native Web Share API integration (mobile-friendly)
-- Fallback to copy-to-clipboard for desktop browsers
-- Share patient ID or download link
-
-### 4. Responsive Design
-- QR code scales appropriately on all devices
-- Touch-friendly buttons for mobile users
+This involves:
+- Adding `useDoctorConnections` hook to DashboardHome
+- Adding a fourth checklist item for adding doctors
+- Updating the summary cards section to include doctor count
 
 ---
 
-## Technical Implementation
+## Technical Specifications
 
-### Dependencies
+### Onboarding Polish Changes
 
-**Install qrcode.react library:**
+**File: `src/pages/dashboard/DashboardHome.tsx`**
 
-```bash
-npm install qrcode.react
+Add to imports:
+- `useDoctorConnections` from hooks
+
+Add to checklist items array:
+- New item with id "doctor", label "Add your first healthcare provider", link to "/dashboard/doctors"
+
+Add to summary cards:
+- New card showing doctor count with Users icon
+
+### Direct Share to Doctors (Future)
+
+**New Database Table:**
+```sql
+CREATE TABLE doctor_share_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  doctor_id UUID REFERENCES doctor_connections(id) ON DELETE CASCADE,
+  token_id UUID REFERENCES access_tokens(id) ON DELETE SET NULL,
+  shared_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  notes TEXT
+);
 ```
 
-This is a lightweight, well-maintained library with TypeScript support that provides both SVG and Canvas-based QR code components.
+**RLS Policies:**
+- Users can only view/manage their own share history
 
-### Files to Modify
+### Document Access Edge Function (Future)
 
-**1. `src/pages/dashboard/QRCodePage.tsx`**
+**Endpoint:** `/functions/v1/generate-document-url`
 
-Updates:
-- Import `QRCodeSVG` from `qrcode.react`
-- Replace placeholder QrCode icon with real QR code component
-- Implement download functionality using canvas conversion
-- Add Web Share API support with fallback
-- Enable the Download and Share buttons
-
-**2. `src/pages/dashboard/ShareDataPage.tsx`**
-
-Updates:
-- Import `QRCodeSVG` from `qrcode.react`
-- Replace placeholder with smaller QR code display
-- Link to full QRCodePage for larger view
-- Remove "coming soon" messaging
-
-### New Components (Optional Extraction)
-
-**`src/components/dashboard/PatientQRCode.tsx`** (optional)
-
-A reusable QR code component that can be used across pages:
-- Props: `patientId`, `size`, `showDownload`, `showShare`
-- Encapsulates QR generation and download logic
-- Consistent styling across the app
-
----
-
-## Implementation Details
-
-### QRCodePage.tsx Changes
-
-```typescript
-// Key imports to add
-import { QRCodeSVG } from "qrcode.react";
-import { useRef } from "react";
-
-// QR Code value - encodes patient ID with app context
-const qrValue = `patientbio:${patientId}`;
-
-// Download function using canvas
-const handleDownload = () => {
-  const svg = document.getElementById("patient-qr-code");
-  const canvas = document.createElement("canvas");
-  // Convert SVG to canvas, then to PNG
-  // Trigger download with patient ID in filename
-};
-
-// Share function with Web Share API
-const handleShare = async () => {
-  if (navigator.share) {
-    await navigator.share({
-      title: "My Patient Bio QR Code",
-      text: `My Patient ID: ${patientId}`,
-    });
-  } else {
-    // Fallback to copy
-  }
-};
+**Request:**
+```json
+{
+  "token": "abc123...",
+  "record_id": "uuid"
+}
 ```
 
-### QR Code Configuration
-
-- **Value**: `patientbio:${patientId}` - prefixed for app identification
-- **Size**: 256x256 pixels (optimal for scanning)
-- **Level**: "H" (high error correction for reliable scanning)
-- **Colors**: 
-  - Foreground: Dark color for contrast
-  - Background: White for scanner compatibility
-
-### Download Implementation
-
-The download process:
-1. Get the SVG element by ID
-2. Create a canvas with appropriate dimensions
-3. Draw the SVG onto the canvas using an Image element
-4. Convert canvas to PNG data URL
-5. Create a temporary download link and trigger click
-6. Clean up the temporary elements
-
-### Share Implementation
-
-Using the Web Share API (supported on mobile browsers):
-1. Check if `navigator.share` is available
-2. If available, trigger native share dialog
-3. If not available, fall back to copying patient ID to clipboard
-4. Show appropriate toast feedback
-
----
-
-## Component Structure
-
-### QRCodePage Layout
-
-```text
-Card (main container)
-├── CardHeader
-│   ├── CardTitle: "My QR Code"
-│   └── CardDescription
-└── CardContent
-    ├── QR Code Display Container (white background, shadow)
-    │   └── QRCodeSVG component (id="patient-qr-code")
-    ├── Patient ID Display with Copy Button
-    └── Action Buttons Row
-        ├── Download Button (enabled)
-        └── Share Button (enabled)
-
-Card (instructions)
-└── CardContent
-    └── Usage instructions list
+**Response:**
+```json
+{
+  "url": "https://...signed-url...",
+  "expires_in": 300
+}
 ```
 
-### ShareDataPage QR Section
-
-```text
-QR Code Section (within existing card)
-├── Smaller QRCodeSVG (128x128)
-├── "Scan to view patient info" text
-└── Link to full QR Code page
-```
-
----
-
-## Implementation Order
-
-1. **Install dependency**: Add `qrcode.react` to package.json
-2. **Update QRCodePage**: Replace placeholder with real QR code, implement download/share
-3. **Update ShareDataPage**: Add smaller QR code preview with link to full page
-4. **Test functionality**: Verify QR codes scan correctly and download works
-
----
-
-## Design Specifications
-
-**QR Code Container:**
-- White background (required for QR scanner compatibility)
-- Rounded corners with shadow
-- Padding around QR code
-
-**Colors:**
-- QR foreground: `#1f2937` (dark gray for contrast)
-- QR background: `#ffffff` (white)
-- Container: White with shadow
-
-**Sizes:**
-- QRCodePage: 256x256 pixels
-- ShareDataPage preview: 128x128 pixels
-
----
-
-## Security Considerations
-
-1. **Patient ID only**: QR code encodes only the 8-character patient ID, not sensitive health data
-2. **No PII in QR**: Full user details are NOT embedded in the QR code
-3. **Provider lookup**: Healthcare providers would need to be authorized to look up patient data using the ID
-4. **Client-side generation**: QR codes are generated in the browser, no server round-trip needed
-
----
-
-## Browser Compatibility
-
-- **QR Generation**: Works in all modern browsers (SVG-based)
-- **Download**: Uses canvas API, supported in all modern browsers
-- **Share**: Web Share API available on mobile browsers and some desktop browsers
-- **Fallback**: Copy-to-clipboard for browsers without Web Share support
+**Validation:**
+1. Verify token exists and belongs to a valid access_tokens record
+2. Verify token is not revoked and not expired
+3. Verify record belongs to the same user_id as the token
+4. Generate 5-minute signed URL for the document
