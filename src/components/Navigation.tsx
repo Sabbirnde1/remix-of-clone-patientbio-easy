@@ -18,7 +18,7 @@ const Navigation = () => {
   const menuItems = [
     { name: "Features", href: "/features", sectionId: "features" },
     { name: "Demo", href: "/demo", sectionId: "demo" },
-    { name: "Hospitals", href: "/hospitals", sectionId: "" },
+    { name: "For Hospitals", href: "/hospitals", sectionId: "" },
     { name: "About", href: "/about", sectionId: "about" },
     { name: "Team", href: "/team", sectionId: "team" },
     { name: "Contact", href: "/contact", sectionId: "contact" },

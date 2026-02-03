@@ -1,6 +1,9 @@
+export type HospitalType = 'hospital' | 'clinic' | 'diagnostic' | 'pharmacy';
+
 export interface Hospital {
   id: string;
   name: string;
+  type: HospitalType | null;
   registration_number: string | null;
   address: string | null;
   city: string | null;

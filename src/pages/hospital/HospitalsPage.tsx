@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHospitals, useMyHospitals } from "@/hooks/useHospitals";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,20 @@ export default function HospitalsPage() {
   const { data: hospitals, isLoading } = useHospitals();
   const { data: myHospitals } = useMyHospitals();
   const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Check if user just returned from auth with quick-register intent
+  const shouldOpenDialog = searchParams.get("action") === "quick-register" && user;
+  const [quickRegisterOpen, setQuickRegisterOpen] = useState(false);
+
+  useEffect(() => {
+    if (shouldOpenDialog) {
+      setQuickRegisterOpen(true);
+      // Clear the action param from URL
+      searchParams.delete("action");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [shouldOpenDialog, searchParams, setSearchParams]);
 
   const filteredHospitals = hospitals?.filter(
     (h) =>
@@ -40,6 +54,8 @@ export default function HospitalsPage() {
           <div className="flex gap-2">
             {user ? (
               <QuickRegisterDialog
+                open={quickRegisterOpen}
+                onOpenChange={setQuickRegisterOpen}
                 trigger={
                   <Button variant="default">
                     <Zap className="h-4 w-4 mr-2" />
@@ -49,14 +65,14 @@ export default function HospitalsPage() {
               />
             ) : (
               <Button asChild variant="default">
-                <Link to="/auth">
+                <Link to="/auth?redirect=/hospitals&action=quick-register">
                   <Zap className="h-4 w-4 mr-2" />
                   Quick Register
                 </Link>
               </Button>
             )}
             <Button asChild variant="outline">
-              <Link to={user ? "/hospitals/register" : "/auth"}>
+              <Link to={user ? "/hospitals/register" : "/auth?redirect=/hospitals/register"}>
                 <Plus className="h-4 w-4 mr-2" />
                 Full Registration
               </Link>

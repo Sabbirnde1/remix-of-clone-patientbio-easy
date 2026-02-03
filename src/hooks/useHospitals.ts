@@ -76,6 +76,7 @@ export const useCreateHospital = () => {
         .from("hospitals")
         .insert({
           name: hospitalData.name || "",
+          type: hospitalData.type || "hospital",
           registration_number: hospitalData.registration_number,
           address: hospitalData.address,
           city: hospitalData.city,
