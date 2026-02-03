@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCreateHospital } from "@/hooks/useHospitals";
 import { HospitalType } from "@/types/hospital";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Loader2, Shield, Clock, Zap } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import RegistrationSteps from "@/components/hospital/RegistrationSteps";
@@ -19,8 +20,6 @@ const STEPS = [
   { id: 2, title: "Location", description: "Address info" },
   { id: 3, title: "Contact", description: "How to reach you" },
 ];
-
-const STORAGE_KEY = "hospital_registration_data";
 
 interface FormData {
   name: string;
@@ -49,44 +48,17 @@ const initialFormData: FormData = {
 };
 
 export default function HospitalOnboardingPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const createHospital = useCreateHospital();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [registeredHospital, setRegisteredHospital] = useState<{
     id: string;
     name: string;
   } | null>(null);
-
-  // Load saved data from session storage
-  useEffect(() => {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setFormData((prev) => ({ ...prev, ...parsed }));
-      } catch (e) {
-        // Invalid data, ignore
-      }
-    }
-  }, []);
-
-  // Save data to session storage when form changes
-  useEffect(() => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-  }, [formData]);
-
-  // Auto-submit if user just authenticated and has saved data
-  useEffect(() => {
-    const shouldAutoSubmit = sessionStorage.getItem("hospital_pending_submit");
-    if (user && shouldAutoSubmit && formData.name && formData.city) {
-      sessionStorage.removeItem("hospital_pending_submit");
-      handleSubmit();
-    }
-  }, [user]);
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -120,13 +92,6 @@ export default function HospitalOnboardingPage() {
     if (!validateStep(currentStep)) return;
 
     if (currentStep === 3) {
-      // Final step - check auth
-      if (!user) {
-        // Save pending submit flag and redirect to auth
-        sessionStorage.setItem("hospital_pending_submit", "true");
-        navigate("/auth?redirect=/hospitals/register");
-        return;
-      }
       handleSubmit();
     } else {
       setCurrentStep((prev) => prev + 1);
@@ -138,29 +103,46 @@ export default function HospitalOnboardingPage() {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    setIsSubmitting(true);
 
     try {
-      const hospital = await createHospital.mutateAsync({
-        name: formData.name.trim(),
-        type: formData.type,
-        registration_number: formData.registration_number.trim() || undefined,
-        city: formData.city.trim(),
-        state: formData.state.trim() || undefined,
-        address: formData.address.trim() || undefined,
-        country: formData.country.trim() || undefined,
-        phone: formData.phone.trim() || undefined,
-        email: formData.email.trim() || undefined,
-        website: formData.website.trim() || undefined,
+      const { data, error } = await supabase.functions.invoke("register-hospital", {
+        body: {
+          name: formData.name.trim(),
+          type: formData.type,
+          registration_number: formData.registration_number.trim() || undefined,
+          city: formData.city.trim(),
+          state: formData.state.trim() || undefined,
+          address: formData.address.trim() || undefined,
+          country: formData.country.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
+          email: formData.email.trim() || undefined,
+          website: formData.website.trim() || undefined,
+        },
       });
 
-      // Clear saved data
-      sessionStorage.removeItem(STORAGE_KEY);
-      sessionStorage.removeItem("hospital_pending_submit");
+      if (error) {
+        throw new Error(error.message);
+      }
 
-      setRegisteredHospital({ id: hospital.id, name: hospital.name });
-    } catch (error) {
-      // Error handled by mutation
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Registration successful!",
+        description: `${data.hospital.name} has been registered.`,
+      });
+
+      setRegisteredHospital({ id: data.hospital.id, name: data.hospital.name });
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -181,6 +163,7 @@ export default function HospitalOnboardingPage() {
           <RegistrationSuccess
             hospitalId={registeredHospital.id}
             hospitalName={registeredHospital.name}
+            isGuest={!user}
           />
         </main>
         <Footer />
@@ -226,7 +209,7 @@ export default function HospitalOnboardingPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Zap className="h-4 w-4 text-primary" />
-                  <span>Free to start</span>
+                  <span>No account required</span>
                 </div>
               </div>
             </div>
@@ -282,7 +265,7 @@ export default function HospitalOnboardingPage() {
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  disabled={currentStep === 1}
+                  disabled={currentStep === 1 || isSubmitting}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back
@@ -290,19 +273,15 @@ export default function HospitalOnboardingPage() {
 
                 <Button
                   onClick={handleNext}
-                  disabled={createHospital.isPending}
+                  disabled={isSubmitting}
                 >
-                  {createHospital.isPending ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Registering...
                     </>
                   ) : currentStep === 3 ? (
-                    user ? (
-                      "Complete Registration"
-                    ) : (
-                      "Continue to Sign In"
-                    )
+                    "Complete Registration"
                   ) : (
                     <>
                       Next
@@ -311,19 +290,6 @@ export default function HospitalOnboardingPage() {
                   )}
                 </Button>
               </div>
-
-              {/* Auth hint for guests */}
-              {currentStep === 3 && !user && (
-                <p className="mt-4 text-center text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <Link
-                    to="/auth?redirect=/hospitals/register"
-                    className="text-primary hover:underline"
-                  >
-                    Sign in
-                  </Link>
-                </p>
-              )}
             </CardContent>
           </Card>
         </div>
