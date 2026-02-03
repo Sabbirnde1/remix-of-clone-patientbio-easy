@@ -1,9 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, QrCode, Copy, Check } from "lucide-react";
+import { Share2, Copy, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { QRCodeSVG } from "qrcode.react";
+import { Link } from "react-router-dom";
 
 const ShareDataPage = () => {
   const { user } = useAuth();
@@ -12,6 +14,7 @@ const ShareDataPage = () => {
 
   // Generate patient ID from user UUID
   const patientId = user?.id?.substring(0, 8).toUpperCase() || "N/A";
+  const qrValue = `patientbio:${patientId}`;
 
   const handleCopyId = async () => {
     try {
@@ -69,15 +72,27 @@ const ShareDataPage = () => {
             </p>
           </div>
 
-          {/* QR Code Placeholder */}
+          {/* QR Code Section */}
           <div className="border border-border rounded-xl p-6 text-center">
-            <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
-              <QrCode className="h-16 w-16 text-muted-foreground" />
+            <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center mx-auto mb-4 p-2 shadow-sm">
+              <QRCodeSVG
+                value={qrValue}
+                size={112}
+                level="H"
+                bgColor="#ffffff"
+                fgColor="#1f2937"
+              />
             </div>
             <h3 className="font-semibold mb-2">QR Code Sharing</h3>
-            <p className="text-sm text-muted-foreground">
-              QR code generation coming soon. Scan to share your records instantly.
+            <p className="text-sm text-muted-foreground mb-4">
+              Scan to share your patient info instantly
             </p>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/dashboard/qr-code">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View Full Size
+              </Link>
+            </Button>
           </div>
 
           <div className="text-center text-sm text-muted-foreground">
