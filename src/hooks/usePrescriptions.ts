@@ -27,6 +27,9 @@ export interface Prescription {
   updated_at: string;
   patient_name?: string;
   doctor_name?: string;
+  doctor_specialty?: string;
+  doctor_qualification?: string;
+  doctor_phone?: string;
 }
 
 export interface CreatePrescriptionInput {
@@ -93,7 +96,7 @@ export const useDoctorPrescriptions = (patientId?: string) => {
   });
 };
 
-// For patients - get prescriptions issued to them
+// For patients - get prescriptions issued to them (with doctor info)
 export const usePatientPrescriptions = () => {
   const { user } = useAuth();
 
@@ -102,18 +105,37 @@ export const usePatientPrescriptions = () => {
     queryFn: async (): Promise<Prescription[]> => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
+      const { data: prescriptions, error } = await supabase
         .from("prescriptions")
         .select("*")
         .eq("patient_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      if (!prescriptions || prescriptions.length === 0) return [];
+
+      // Get unique doctor IDs and fetch their profiles
+      const doctorIds = [...new Set(prescriptions.map(p => p.doctor_id))];
+      const { data: doctors } = await supabase
+        .from("doctor_profiles")
+        .select("user_id, full_name, specialty, qualification, phone")
+        .in("user_id", doctorIds);
+
+      const doctorMap = new Map(
+        (doctors || []).map(d => [d.user_id, d])
+      );
       
-      return (data || []).map(prescription => ({
-        ...prescription,
-        medications: parseMedications(prescription.medications)
-      }));
+      return prescriptions.map(prescription => {
+        const doctor = doctorMap.get(prescription.doctor_id);
+        return {
+          ...prescription,
+          medications: parseMedications(prescription.medications),
+          doctor_name: doctor?.full_name,
+          doctor_specialty: doctor?.specialty,
+          doctor_qualification: doctor?.qualification,
+          doctor_phone: doctor?.phone,
+        };
+      });
     },
     enabled: !!user?.id,
   });

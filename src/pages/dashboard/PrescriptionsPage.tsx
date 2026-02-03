@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FileText, FolderOpen, Trash2, ExternalLink, Calendar, User, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useHealthRecords } from "@/hooks/useHealthRecords";
+import { DigitalPrescriptionsSection } from "@/components/dashboard/DigitalPrescriptionsSection";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -97,6 +98,10 @@ const PrescriptionsPage = () => {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Digital Prescriptions Section */}
+      <DigitalPrescriptionsSection />
+      
+      {/* Health Records Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
