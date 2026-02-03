@@ -1,8 +1,9 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QrCode, Download, Copy, Check, Share2, ScanLine } from "lucide-react";
+import { QrCode, Download, Copy, Check, Share2, ScanLine, Keyboard, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
@@ -13,6 +14,7 @@ const QRCodePage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [manualDoctorId, setManualDoctorId] = useState("");
   const { lookupDoctor, isConnecting } = useConnectToDoctor();
 
   // Generate patient ID from user UUID
@@ -119,6 +121,25 @@ const QRCodePage = () => {
     }
   };
 
+  const handleManualConnect = async () => {
+    const cleanId = manualDoctorId.trim().toUpperCase();
+    if (cleanId.length !== 8) {
+      toast({
+        title: "Invalid ID",
+        description: "Please enter a valid 8-character Doctor ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Connecting...",
+      description: `Looking up doctor ${cleanId}...`,
+    });
+    await lookupDoctor(cleanId);
+    setManualDoctorId("");
+  };
+
   return (
     <div className="space-y-6 max-w-md mx-auto">
       <Tabs defaultValue="my-code" className="w-full">
@@ -223,13 +244,47 @@ const QRCodePage = () => {
             </CardContent>
           </Card>
 
+          {/* Manual ID Entry */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Keyboard className="h-4 w-4" />
+                Enter Doctor ID Manually
+              </CardTitle>
+              <CardDescription>
+                Can't scan? Enter the 8-character Doctor ID below
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., 56CE6C09"
+                  value={manualDoctorId}
+                  onChange={(e) => setManualDoctorId(e.target.value.toUpperCase())}
+                  maxLength={8}
+                  className="font-mono uppercase"
+                />
+                <Button 
+                  onClick={handleManualConnect}
+                  disabled={manualDoctorId.length !== 8 || isConnecting}
+                >
+                  {isConnecting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Connect"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">How to connect</h3>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li>• Ask your doctor to show their PatientBio QR code</li>
-                <li>• Tap "Start Scanner" and point your camera at the code</li>
-                <li>• Once scanned, the doctor can view your health data</li>
+                <li>• Scan it or enter their Doctor ID manually</li>
+                <li>• Once connected, the doctor can view your health data</li>
               </ul>
             </CardContent>
           </Card>

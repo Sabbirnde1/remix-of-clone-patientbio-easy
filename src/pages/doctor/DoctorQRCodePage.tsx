@@ -4,9 +4,10 @@ import { useDoctorProfile } from "@/hooks/useDoctorProfile";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Download, Share2, QrCode, Copy, Stethoscope, ScanLine } from "lucide-react";
+import { Download, Share2, QrCode, Copy, Stethoscope, ScanLine, Keyboard, Loader2 } from "lucide-react";
 import { QRScanner } from "@/components/qr/QRScanner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,6 +16,7 @@ const DoctorQRCodePage = () => {
   const { data: profile } = useDoctorProfile();
   const qrRef = useRef<HTMLDivElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [manualPatientId, setManualPatientId] = useState("");
 
   const doctorId = user?.id?.substring(0, 8).toUpperCase() || "--------";
   const qrValue = `patientbio:doctor:${doctorId}`;
@@ -70,6 +72,56 @@ const DoctorQRCodePage = () => {
     toast.success("Doctor ID copied to clipboard!");
   };
 
+  const connectToPatient = async (patientCode: string) => {
+    setIsProcessing(true);
+    
+    try {
+      // Look up patient by their short ID
+      const { data, error } = await supabase.functions.invoke("lookup-patient-by-id", {
+        body: { patient_code: patientCode },
+      });
+
+      if (error || !data.success) {
+        toast.error(data?.error || "Patient not found");
+        return;
+      }
+
+      // Check if already connected
+      const { data: existingAccess } = await supabase
+        .from("doctor_patient_access")
+        .select("id")
+        .eq("doctor_id", user?.id)
+        .eq("patient_id", data.patient.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (existingAccess) {
+        toast.info(`Already connected with ${data.patient.display_name || "this patient"}`);
+        return;
+      }
+
+      // Create access record
+      const { error: insertError } = await supabase
+        .from("doctor_patient_access")
+        .insert({
+          doctor_id: user?.id,
+          patient_id: data.patient.id,
+          is_active: true,
+        });
+
+      if (insertError) {
+        toast.error("Failed to connect with patient");
+        return;
+      }
+
+      toast.success(`Connected with ${data.patient.display_name || "patient"}`);
+    } catch (err) {
+      toast.error("An error occurred while processing");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleScan = async (decodedText: string) => {
     // Expected format: patientbio:PATIENTID
     if (decodedText.startsWith("patientbio:doctor:")) {
@@ -79,56 +131,21 @@ const DoctorQRCodePage = () => {
 
     if (decodedText.startsWith("patientbio:")) {
       const patientCode = decodedText.replace("patientbio:", "");
-      setIsProcessing(true);
-      
-      try {
-        // Look up patient by their short ID
-        const { data, error } = await supabase.functions.invoke("lookup-patient-by-id", {
-          body: { patient_code: patientCode },
-        });
-
-        if (error || !data.success) {
-          toast.error(data?.error || "Patient not found");
-          return;
-        }
-
-        // Check if already connected
-        const { data: existingAccess } = await supabase
-          .from("doctor_patient_access")
-          .select("id")
-          .eq("doctor_id", user?.id)
-          .eq("patient_id", data.patient.id)
-          .eq("is_active", true)
-          .maybeSingle();
-
-        if (existingAccess) {
-          toast.info(`Already connected with ${data.patient.display_name || "this patient"}`);
-          return;
-        }
-
-        // Create access record
-        const { error: insertError } = await supabase
-          .from("doctor_patient_access")
-          .insert({
-            doctor_id: user?.id,
-            patient_id: data.patient.id,
-            is_active: true,
-          });
-
-        if (insertError) {
-          toast.error("Failed to connect with patient");
-          return;
-        }
-
-        toast.success(`Connected with ${data.patient.display_name || "patient"}`);
-      } catch (err) {
-        toast.error("An error occurred while processing the QR code");
-      } finally {
-        setIsProcessing(false);
-      }
+      await connectToPatient(patientCode);
     } else {
       toast.error("This QR code is not recognized by PatientBio.");
     }
+  };
+
+  const handleManualConnect = async () => {
+    const cleanId = manualPatientId.trim().toUpperCase();
+    if (cleanId.length !== 8) {
+      toast.error("Please enter a valid 8-character Patient ID.");
+      return;
+    }
+    
+    await connectToPatient(cleanId);
+    setManualPatientId("");
   };
 
   return (
@@ -269,11 +286,40 @@ const DoctorQRCodePage = () => {
             </CardHeader>
             <CardContent>
               <QRScanner onScan={handleScan} />
-              {isProcessing && (
-                <p className="text-center text-muted-foreground mt-4">
-                  Processing...
-                </p>
-              )}
+            </CardContent>
+          </Card>
+
+          {/* Manual ID Entry */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Keyboard className="h-4 w-4" />
+                Enter Patient ID Manually
+              </CardTitle>
+              <CardDescription>
+                Can't scan? Enter the 8-character Patient ID below
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., A1B2C3D4"
+                  value={manualPatientId}
+                  onChange={(e) => setManualPatientId(e.target.value.toUpperCase())}
+                  maxLength={8}
+                  className="font-mono uppercase"
+                />
+                <Button 
+                  onClick={handleManualConnect}
+                  disabled={manualPatientId.length !== 8 || isProcessing}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Connect"
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -282,8 +328,8 @@ const DoctorQRCodePage = () => {
               <h3 className="font-semibold mb-2">How to connect</h3>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li>• Ask the patient to show their PatientBio QR code</li>
-                <li>• Tap "Start Scanner" and point your camera at the code</li>
-                <li>• Once scanned, you'll be able to view their health data</li>
+                <li>• Scan it or enter their Patient ID manually</li>
+                <li>• Once connected, you'll be able to view their health data</li>
               </ul>
             </CardContent>
           </Card>
