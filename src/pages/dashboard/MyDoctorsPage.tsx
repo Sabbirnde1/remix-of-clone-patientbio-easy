@@ -10,9 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, Edit, Trash2, Phone, Mail, Building2, Stethoscope, Loader2, ShieldCheck, Clock, XCircle } from "lucide-react";
+import { Users, UserPlus, Edit, Trash2, Phone, Mail, Building2, Stethoscope, Loader2, ShieldCheck, Clock, XCircle, QrCode } from "lucide-react";
 import { useDoctorConnections, DoctorConnection } from "@/hooks/useDoctorConnections";
 import { usePatientDoctorAccess } from "@/hooks/usePatientDoctorAccess";
+import { ConnectToDoctorDialog } from "@/components/dashboard/ConnectToDoctorDialog";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface DoctorFormData {
@@ -38,6 +39,7 @@ const MyDoctorsPage = () => {
   const { accessRecords, isLoading: accessLoading, revokeAccess, isRevoking } = usePatientDoctorAccess();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<DoctorConnection | null>(null);
   const [formData, setFormData] = useState<DoctorFormData>(emptyFormData);
 
@@ -106,6 +108,27 @@ const MyDoctorsPage = () => {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Connect with Doctor by ID */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <QrCode className="h-5 w-5 text-primary" />
+                Connect with a Doctor
+              </CardTitle>
+              <CardDescription>
+                Enter a doctor's ID to grant them access to your health records
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsConnectDialogOpen(true)} className="bg-gradient-to-r from-primary to-secondary border-0 w-full sm:w-auto">
+              <QrCode className="mr-2 h-4 w-4" />
+              Enter Doctor ID
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
+
       {/* Hospital Doctors with Access */}
       {accessRecords.length > 0 && (
         <Card className="border-primary/20">
@@ -115,7 +138,7 @@ const MyDoctorsPage = () => {
               Doctors with Portal Access
             </CardTitle>
             <CardDescription>
-              These doctors can view your health records in their hospital portal
+              These doctors can view your health records in their portal
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -422,6 +445,12 @@ const MyDoctorsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Connect to Doctor Dialog */}
+      <ConnectToDoctorDialog
+        open={isConnectDialogOpen}
+        onOpenChange={setIsConnectDialogOpen}
+      />
     </div>
   );
 };
