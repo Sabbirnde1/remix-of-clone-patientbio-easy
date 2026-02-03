@@ -15,9 +15,10 @@ Deno.serve(async (req) => {
   try {
     // Get the authorization header
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
+      console.log("Missing or invalid authorization header");
       return new Response(
-        JSON.stringify({ error: "No authorization header" }),
+        JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -32,14 +33,19 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Get current user
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-    if (userError || !user) {
+    // Validate JWT using getClaims
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      console.log("Invalid JWT claims:", claimsError?.message);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const userId = claimsData.claims.sub as string;
+    console.log("Authenticated user:", userId);
 
     // Get patient_id from request body
     const { patient_id } = await req.json();
@@ -54,7 +60,7 @@ Deno.serve(async (req) => {
     const { data: access, error: accessError } = await supabaseUser
       .from("doctor_patient_access")
       .select("id")
-      .eq("doctor_id", user.id)
+      .eq("doctor_id", userId)
       .eq("patient_id", patient_id)
       .eq("is_active", true)
       .maybeSingle();
@@ -107,7 +113,7 @@ Deno.serve(async (req) => {
     await supabaseAdmin
       .from("doctor_patient_access")
       .update({ last_accessed_at: new Date().toISOString() })
-      .eq("doctor_id", user.id)
+      .eq("doctor_id", userId)
       .eq("patient_id", patient_id);
 
     return new Response(

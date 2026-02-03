@@ -8,3 +8,21 @@ verify_jwt = false
 
 [functions.generate-doctor-document-url]
 verify_jwt = false
+
+[functions.get-patient-data-for-doctor]
+verify_jwt = false
+
+[functions.get-shared-patient-data]
+verify_jwt = false
+
+[functions.generate-document-url]
+verify_jwt = false
+
+[functions.send-access-notification]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = false
+
+[functions.register-hospital]
+verify_jwt = false
