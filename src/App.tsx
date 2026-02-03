@@ -36,6 +36,7 @@ import UploadPage from "./pages/dashboard/UploadPage";
 import ShareDataPage from "./pages/dashboard/ShareDataPage";
 import MyDoctorsPage from "./pages/dashboard/MyDoctorsPage";
 import QRCodePage from "./pages/dashboard/QRCodePage";
+import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
 
 // Hospital imports
 import HospitalsPage from "./pages/hospital/HospitalsPage";
@@ -49,6 +50,8 @@ import HospitalApplicationsPage from "./pages/hospital/HospitalApplicationsPage"
 import HospitalSettingsPage from "./pages/hospital/HospitalSettingsPage";
 import DoctorPatientsPage from "./pages/hospital/DoctorPatientsPage";
 import DoctorPrescriptionsPage from "./pages/hospital/DoctorPrescriptionsPage";
+import HospitalAppointmentsPage from "./pages/hospital/HospitalAppointmentsPage";
+import DoctorAvailabilityPage from "./pages/hospital/DoctorAvailabilityPage";
 
 // Standalone Doctor Portal imports
 import DoctorAuthPage from "./pages/doctor/DoctorAuthPage";
@@ -95,9 +98,11 @@ const App = () => (
               <Route index element={<HospitalDashboard />} />
               <Route path="staff" element={<HospitalStaffPage />} />
               <Route path="applications" element={<HospitalApplicationsPage />} />
-              <Route path="settings" element={<HospitalSettingsPage />} />
+            <Route path="settings" element={<HospitalSettingsPage />} />
               <Route path="patients" element={<DoctorPatientsPage />} />
               <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
+              <Route path="appointments" element={<HospitalAppointmentsPage />} />
+              <Route path="availability" element={<DoctorAvailabilityPage />} />
             </Route>
             
             {/* Standalone Doctor Portal Routes */}
@@ -121,6 +126,7 @@ const App = () => (
               <Route path="share" element={<ShareDataPage />} />
               <Route path="doctors" element={<MyDoctorsPage />} />
               <Route path="qr-code" element={<QRCodePage />} />
+              <Route path="appointments" element={<AppointmentsPage />} />
             </Route>
             
             {/* Admin Routes */}

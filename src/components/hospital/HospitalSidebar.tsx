@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPlus, Settings, ArrowLeft, Building2, Stethoscope, Pill } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, Settings, ArrowLeft, Building2, Stethoscope, Pill, CalendarDays, Clock } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Hospital } from "@/types/hospital";
 import {
@@ -32,6 +32,7 @@ export function HospitalSidebar({ hospital, isAdmin, isDoctor }: HospitalSidebar
   const managementItems = [
     { title: "Dashboard", url: baseUrl, icon: LayoutDashboard },
     { title: "Staff", url: `${baseUrl}/staff`, icon: Users },
+    { title: "Appointments", url: `${baseUrl}/appointments`, icon: CalendarDays },
     ...(isAdmin
       ? [
           { title: "Applications", url: `${baseUrl}/applications`, icon: UserPlus },
@@ -43,6 +44,7 @@ export function HospitalSidebar({ hospital, isAdmin, isDoctor }: HospitalSidebar
   const doctorItems = [
     { title: "My Patients", url: `${baseUrl}/patients`, icon: Stethoscope },
     { title: "Prescriptions", url: `${baseUrl}/prescriptions`, icon: Pill },
+    { title: "My Availability", url: `${baseUrl}/availability`, icon: Clock },
   ];
 
   const isActive = (path: string) => {
