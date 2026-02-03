@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Mail, Calendar, MapPin, Phone, Save, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { User, Mail, Calendar, MapPin, Phone, Save, Loader2, Bell } from "lucide-react";
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ const ProfilePage = () => {
     gender: "",
     location: "",
     phone: "",
+    notification_email_enabled: true,
   });
 
   // Populate form when profile loads
@@ -30,11 +32,12 @@ const ProfilePage = () => {
         gender: profile.gender || "",
         location: profile.location || "",
         phone: profile.phone || "",
+        notification_email_enabled: profile.notification_email_enabled ?? true,
       });
     }
   }, [profile]);
 
-  const handleChange = (field: keyof UserProfileUpdate, value: string) => {
+  const handleChange = (field: keyof UserProfileUpdate, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -223,6 +226,40 @@ const ProfilePage = () => {
               )}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Notification Preferences Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            Notification Preferences
+          </CardTitle>
+          <CardDescription>
+            Manage how you receive notifications about your shared health data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="notification-toggle" className="text-base">
+                Email notifications
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Receive an email when someone accesses your shared health data links
+              </p>
+            </div>
+            <Switch
+              id="notification-toggle"
+              checked={formData.notification_email_enabled ?? true}
+              onCheckedChange={(checked) => {
+                handleChange("notification_email_enabled", checked);
+                // Auto-save notification preference
+                updateProfile({ notification_email_enabled: checked });
+              }}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
