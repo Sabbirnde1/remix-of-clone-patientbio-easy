@@ -1,16 +1,20 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDoctorProfile } from "@/hooks/useDoctorProfile";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Download, Share2, QrCode, Copy, Stethoscope } from "lucide-react";
+import { Download, Share2, QrCode, Copy, Stethoscope, ScanLine } from "lucide-react";
+import { QRScanner } from "@/components/qr/QRScanner";
+import { supabase } from "@/integrations/supabase/client";
 
 const DoctorQRCodePage = () => {
   const { user } = useAuth();
   const { data: profile } = useDoctorProfile();
   const qrRef = useRef<HTMLDivElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const doctorId = user?.id?.substring(0, 8).toUpperCase() || "--------";
   const qrValue = `patientbio:doctor:${doctorId}`;
@@ -66,116 +70,225 @@ const DoctorQRCodePage = () => {
     toast.success("Doctor ID copied to clipboard!");
   };
 
+  const handleScan = async (decodedText: string) => {
+    // Expected format: patientbio:PATIENTID
+    if (decodedText.startsWith("patientbio:doctor:")) {
+      toast.error("This is a doctor's QR code. Please scan a patient's QR code.");
+      return;
+    }
+
+    if (decodedText.startsWith("patientbio:")) {
+      const patientCode = decodedText.replace("patientbio:", "");
+      setIsProcessing(true);
+      
+      try {
+        // Look up patient by their short ID
+        const { data, error } = await supabase.functions.invoke("lookup-patient-by-id", {
+          body: { patient_code: patientCode },
+        });
+
+        if (error || !data.success) {
+          toast.error(data?.error || "Patient not found");
+          return;
+        }
+
+        // Check if already connected
+        const { data: existingAccess } = await supabase
+          .from("doctor_patient_access")
+          .select("id")
+          .eq("doctor_id", user?.id)
+          .eq("patient_id", data.patient.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (existingAccess) {
+          toast.info(`Already connected with ${data.patient.display_name || "this patient"}`);
+          return;
+        }
+
+        // Create access record
+        const { error: insertError } = await supabase
+          .from("doctor_patient_access")
+          .insert({
+            doctor_id: user?.id,
+            patient_id: data.patient.id,
+            is_active: true,
+          });
+
+        if (insertError) {
+          toast.error("Failed to connect with patient");
+          return;
+        }
+
+        toast.success(`Connected with ${data.patient.display_name || "patient"}`);
+      } catch (err) {
+        toast.error("An error occurred while processing the QR code");
+      } finally {
+        setIsProcessing(false);
+      }
+    } else {
+      toast.error("This QR code is not recognized by PatientBio.");
+    }
+  };
+
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">My QR Code</h1>
         <p className="text-muted-foreground">
-          Patients can scan this to connect with you
+          Share with patients or scan to connect
         </p>
       </div>
 
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2">
-            <QrCode className="h-5 w-5" />
-            Doctor QR Code
-          </CardTitle>
-          <CardDescription>
-            Share this with patients to grant them access
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center">
-          {/* QR Code */}
-          <div
-            ref={qrRef}
-            className="bg-white p-6 rounded-xl shadow-inner mb-6"
-          >
-            <QRCodeSVG
-              value={qrValue}
-              size={200}
-              level="H"
-              includeMargin={false}
-              imageSettings={{
-                src: "",
-                height: 0,
-                width: 0,
-                excavate: false,
-              }}
-            />
-          </div>
+      <Tabs defaultValue="my-code" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="my-code" className="flex items-center gap-2">
+            <QrCode className="h-4 w-4" />
+            My Code
+          </TabsTrigger>
+          <TabsTrigger value="scan" className="flex items-center gap-2">
+            <ScanLine className="h-4 w-4" />
+            Scan Patient
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Doctor Info */}
-          <div className="text-center mb-6">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Stethoscope className="h-5 w-5 text-primary" />
-              <span className="font-semibold text-lg">
-                {profile?.full_name || "Doctor"}
-              </span>
-            </div>
-            {profile?.specialty && (
-              <p className="text-muted-foreground text-sm">
-                {profile.specialty}
-              </p>
-            )}
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <code className="bg-muted px-3 py-1 rounded-md text-lg font-mono font-bold">
-                {doctorId}
-              </code>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleCopyId}
-                className="h-8 w-8"
+        <TabsContent value="my-code" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="flex items-center justify-center gap-2">
+                <QrCode className="h-5 w-5" />
+                Doctor QR Code
+              </CardTitle>
+              <CardDescription>
+                Share this with patients to grant them access
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center">
+              {/* QR Code */}
+              <div
+                ref={qrRef}
+                className="bg-white p-6 rounded-xl shadow-inner mb-6"
               >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+                <QRCodeSVG
+                  value={qrValue}
+                  size={200}
+                  level="H"
+                  includeMargin={false}
+                  imageSettings={{
+                    src: "",
+                    height: 0,
+                    width: 0,
+                    excavate: false,
+                  }}
+                />
+              </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 w-full">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={handleDownload}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Button className="flex-1" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              {/* Doctor Info */}
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Stethoscope className="h-5 w-5 text-primary" />
+                  <span className="font-semibold text-lg">
+                    {profile?.full_name || "Doctor"}
+                  </span>
+                </div>
+                {profile?.specialty && (
+                  <p className="text-muted-foreground text-sm">
+                    {profile.specialty}
+                  </p>
+                )}
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <code className="bg-muted px-3 py-1 rounded-md text-lg font-mono font-bold">
+                    {doctorId}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCopyId}
+                    className="h-8 w-8"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">How it works</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <div className="flex gap-3">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
-              1
-            </span>
-            <p>Patient opens their PatientBio app</p>
-          </div>
-          <div className="flex gap-3">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
-              2
-            </span>
-            <p>They scan your QR code or enter your Doctor ID</p>
-          </div>
-          <div className="flex gap-3">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
-              3
-            </span>
-            <p>You get access to view their health data and prescribe</p>
-          </div>
-        </CardContent>
-      </Card>
+              {/* Actions */}
+              <div className="flex gap-3 w-full">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleDownload}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                <Button className="flex-1" onClick={handleShare}>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">How it works</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex gap-3">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  1
+                </span>
+                <p>Patient opens their PatientBio app</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  2
+                </span>
+                <p>They scan your QR code or enter your Doctor ID</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  3
+                </span>
+                <p>You get access to view their health data and prescribe</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="scan" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="flex items-center justify-center gap-2">
+                <ScanLine className="h-5 w-5 text-primary" />
+                Scan Patient QR
+              </CardTitle>
+              <CardDescription>
+                Scan a patient's QR code to connect with them
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <QRScanner onScan={handleScan} />
+              {isProcessing && (
+                <p className="text-center text-muted-foreground mt-4">
+                  Processing...
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="font-semibold mb-2">How to connect</h3>
+              <ul className="text-sm text-muted-foreground space-y-2">
+                <li>• Ask the patient to show their PatientBio QR code</li>
+                <li>• Tap "Start Scanner" and point your camera at the code</li>
+                <li>• Once scanned, you'll be able to view their health data</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
