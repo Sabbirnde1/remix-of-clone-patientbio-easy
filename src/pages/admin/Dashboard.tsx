@@ -192,28 +192,28 @@ export default function Dashboard() {
       value: userStatsCalc.total,
       description: `${userStatsCalc.verified} verified`,
       icon: Users,
-      color: "text-indigo-500",
+      color: "text-primary",
     },
     {
       title: "Team Members",
       value: teamCount ?? 0,
       description: "Active team members",
       icon: UserCog,
-      color: "text-blue-500",
+      color: "text-secondary",
     },
     {
       title: "Total Messages",
       value: stats.total,
       description: `${stats.unread} unread`,
       icon: Mail,
-      color: "text-green-500",
+      color: "text-accent",
     },
     {
       title: "New This Week",
       value: userStatsCalc.thisWeek,
       description: "User signups",
       icon: TrendingUp,
-      color: "text-purple-500",
+      color: "text-primary",
     },
   ];
 

@@ -113,8 +113,8 @@ const ResetPasswordPage = () => {
         <div className="bg-card rounded-2xl border border-border/50 p-6 sm:p-8 shadow-xl">
           {isSuccess ? (
             <div className="text-center py-4">
-              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="h-8 w-8 text-primary" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold mb-2">Password Updated!</h2>
               <p className="text-sm sm:text-base text-muted-foreground mb-6">

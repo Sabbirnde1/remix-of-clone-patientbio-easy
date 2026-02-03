@@ -144,7 +144,7 @@ const AuthPage = () => {
               title: "Email Not Verified",
               description: (
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="h-5 w-5 text-destructive-foreground mt-0.5 flex-shrink-0" />
                   <span>{message}</span>
                 </div>
               ),
@@ -277,8 +277,8 @@ const AuthPage = () => {
               <>
                 {resetEmailSent ? (
                   <div className="text-center py-4">
-                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle2 className="h-8 w-8 text-primary" />
                     </div>
                     <h2 className="text-xl sm:text-2xl font-bold mb-2">Check your email</h2>
                     <p className="text-sm sm:text-base text-muted-foreground mb-6">

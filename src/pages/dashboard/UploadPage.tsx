@@ -138,7 +138,7 @@ const UploadPage = () => {
                 dragActive
                   ? "border-primary bg-primary/5"
                   : selectedFile
-                  ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                  ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
               }`}
               onDragEnter={handleDrag}
@@ -164,12 +164,12 @@ const UploadPage = () => {
                       className="max-h-48 mx-auto rounded-lg object-contain"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto">
-                      <FileText className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                      <FileText className="h-8 w-8 text-primary" />
                     </div>
                   )}
                   <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle className="h-5 w-5 text-primary" />
                     <span className="font-medium">{selectedFile.name}</span>
                     <span className="text-sm text-muted-foreground">
                       ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)

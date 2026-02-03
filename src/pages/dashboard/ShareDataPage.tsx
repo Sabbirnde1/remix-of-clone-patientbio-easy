@@ -98,7 +98,7 @@ const ShareDataPage = () => {
             <div className="flex items-center justify-center gap-3">
               <span className="text-3xl font-mono font-bold tracking-wider">{patientId}</span>
               <Button variant="outline" size="icon" onClick={handleCopyId} className="h-8 w-8">
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Share this ID with your healthcare provider</p>
@@ -200,19 +200,19 @@ const ShareDataPage = () => {
                 return (
                   <div
                     key={token.id}
-                    className={`border rounded-lg p-4 ${isActive ? "border-border" : "border-border/50 opacity-60"}`}
+                    className={`border rounded-lg p-3 sm:p-4 ${isActive ? "border-border" : "border-border/50 opacity-60"}`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="font-medium truncate">
                             {token.label || "Access Link"}
                           </span>
-                          <Badge variant={status.variant} className="text-xs">
+                          <Badge variant={status.variant} className="text-xs shrink-0">
                             {status.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {isActive
@@ -224,7 +224,7 @@ const ShareDataPage = () => {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 self-end sm:self-start shrink-0">
                         {isActive && (
                           <>
                             <Button
@@ -234,7 +234,7 @@ const ShareDataPage = () => {
                               onClick={() => handleCopyLink(token.token)}
                             >
                               {copiedToken === token.token ? (
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-primary" />
                               ) : (
                                 <Copy className="h-4 w-4" />
                               )}
