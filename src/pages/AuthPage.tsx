@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Sparkles, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -130,16 +130,33 @@ const AuthPage = () => {
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
           let message = "An error occurred during sign in.";
+          let showEmailNotConfirmed = false;
+          
           if (error.message.includes("Invalid login credentials")) {
             message = "Invalid email or password. Please try again.";
           } else if (error.message.includes("Email not confirmed")) {
-            message = "Please confirm your email address before signing in.";
+            showEmailNotConfirmed = true;
+            message = "Please verify your email address before signing in. Check your inbox for a verification link.";
           }
-          toast({
-            title: "Sign In Failed",
-            description: message,
-            variant: "destructive",
-          });
+          
+          if (showEmailNotConfirmed) {
+            toast({
+              title: "Email Not Verified",
+              description: (
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <span>{message}</span>
+                </div>
+              ),
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Sign In Failed",
+              description: message,
+              variant: "destructive",
+            });
+          }
         } else {
           toast({
             title: "Welcome back!",
@@ -162,12 +179,8 @@ const AuthPage = () => {
             variant: "destructive",
           });
         } else {
-          toast({
-            title: "Account created!",
-            description: "You can now sign in with your credentials.",
-          });
-          setView("login");
-          setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+          // Redirect to verify email page instead of switching to login
+          navigate("/verify-email");
         }
       }
     } catch (err) {
