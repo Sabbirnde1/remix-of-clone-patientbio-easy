@@ -37,6 +37,16 @@ import ShareDataPage from "./pages/dashboard/ShareDataPage";
 import MyDoctorsPage from "./pages/dashboard/MyDoctorsPage";
 import QRCodePage from "./pages/dashboard/QRCodePage";
 
+// Hospital imports
+import HospitalsPage from "./pages/hospital/HospitalsPage";
+import RegisterHospitalPage from "./pages/hospital/RegisterHospitalPage";
+import ApplyToHospitalPage from "./pages/hospital/ApplyToHospitalPage";
+import HospitalLayout from "./pages/hospital/HospitalLayout";
+import HospitalDashboard from "./pages/hospital/HospitalDashboard";
+import HospitalStaffPage from "./pages/hospital/HospitalStaffPage";
+import HospitalApplicationsPage from "./pages/hospital/HospitalApplicationsPage";
+import HospitalSettingsPage from "./pages/hospital/HospitalSettingsPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -62,6 +72,17 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/install" element={<InstallPage />} />
             <Route path="/share/:token" element={<ShareViewPage />} />
+            
+            {/* Hospital Routes */}
+            <Route path="/hospitals" element={<HospitalsPage />} />
+            <Route path="/hospitals/register" element={<RegisterHospitalPage />} />
+            <Route path="/hospitals/:hospitalId/apply" element={<ApplyToHospitalPage />} />
+            <Route path="/hospital/:hospitalId" element={<HospitalLayout />}>
+              <Route index element={<HospitalDashboard />} />
+              <Route path="staff" element={<HospitalStaffPage />} />
+              <Route path="applications" element={<HospitalApplicationsPage />} />
+              <Route path="settings" element={<HospitalSettingsPage />} />
+            </Route>
             
             {/* Patient Dashboard Routes */}
             <Route path="/dashboard" element={<DashboardLayout />}>
