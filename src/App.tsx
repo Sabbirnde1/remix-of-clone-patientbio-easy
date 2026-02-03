@@ -50,6 +50,16 @@ import HospitalSettingsPage from "./pages/hospital/HospitalSettingsPage";
 import DoctorPatientsPage from "./pages/hospital/DoctorPatientsPage";
 import DoctorPrescriptionsPage from "./pages/hospital/DoctorPrescriptionsPage";
 
+// Standalone Doctor Portal imports
+import DoctorAuthPage from "./pages/doctor/DoctorAuthPage";
+import DoctorOnboardingPage from "./pages/doctor/DoctorOnboardingPage";
+import DoctorLayout from "./pages/doctor/DoctorLayout";
+import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import DoctorProfilePage from "./pages/doctor/DoctorProfilePage";
+import DoctorPatientsPageStandalone from "./pages/doctor/DoctorPatientsPage";
+import DoctorPrescriptionsPageStandalone from "./pages/doctor/DoctorPrescriptionsPage";
+import DoctorQRCodePage from "./pages/doctor/DoctorQRCodePage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -88,6 +98,17 @@ const App = () => (
               <Route path="settings" element={<HospitalSettingsPage />} />
               <Route path="patients" element={<DoctorPatientsPage />} />
               <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
+            </Route>
+            
+            {/* Standalone Doctor Portal Routes */}
+            <Route path="/doctors/login" element={<DoctorAuthPage />} />
+            <Route path="/doctor/onboarding" element={<DoctorOnboardingPage />} />
+            <Route path="/doctor" element={<DoctorLayout />}>
+              <Route index element={<DoctorDashboard />} />
+              <Route path="profile" element={<DoctorProfilePage />} />
+              <Route path="patients" element={<DoctorPatientsPageStandalone />} />
+              <Route path="prescriptions" element={<DoctorPrescriptionsPageStandalone />} />
+              <Route path="qr-code" element={<DoctorQRCodePage />} />
             </Route>
             
             {/* Patient Dashboard Routes */}

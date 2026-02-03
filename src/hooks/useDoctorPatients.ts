@@ -27,19 +27,20 @@ interface QuickRegisterPatientInput {
   gender: string | null;
 }
 
-export const useDoctorPatients = () => {
+export const useDoctorPatients = (doctorId?: string) => {
   const { user } = useAuth();
+  const targetDoctorId = doctorId || user?.id;
 
   return useQuery({
-    queryKey: ["doctor-patients", user?.id],
-    queryFn: async (): Promise<PatientAccess[]> => {
-      if (!user?.id) return [];
+    queryKey: ["doctor-patients", targetDoctorId],
+    queryFn: async (): Promise<(PatientAccess & { display_name?: string | null })[]> => {
+      if (!targetDoctorId) return [];
 
       // Get active patient access records for this doctor
       const { data: accessRecords, error: accessError } = await supabase
         .from("doctor_patient_access")
         .select("*")
-        .eq("doctor_id", user.id)
+        .eq("doctor_id", targetDoctorId)
         .eq("is_active", true)
         .order("granted_at", { ascending: false });
 
@@ -57,13 +58,19 @@ export const useDoctorPatients = () => {
         console.error("Error fetching patient profiles:", profilesError);
       }
 
-      // Merge data
-      return accessRecords.map((access) => ({
-        ...access,
-        patient_profile: profiles?.find((p) => p.user_id === access.patient_id) || null,
-      }));
+      // Merge data with flat properties for easier access
+      return accessRecords.map((access) => {
+        const profile = profiles?.find((p) => p.user_id === access.patient_id);
+        return {
+          ...access,
+          patient_profile: profile || null,
+          display_name: profile?.display_name || null,
+          date_of_birth: profile?.date_of_birth || null,
+          gender: profile?.gender || null,
+        };
+      });
     },
-    enabled: !!user?.id,
+    enabled: !!targetDoctorId,
   });
 };
 
@@ -149,14 +156,16 @@ export const useGrantPatientAccess = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (patientId: string) => {
+    mutationFn: async ({ doctorId, patientId }: { doctorId: string; patientId: string }) => {
+      const targetDoctorId = doctorId || user?.id;
+      if (!targetDoctorId) throw new Error("Not authenticated");
       if (!user?.id) throw new Error("Not authenticated");
 
       // Check for existing access record (might be inactive)
       const { data: existing, error: checkError } = await supabase
         .from("doctor_patient_access")
         .select("id, is_active")
-        .eq("doctor_id", user.id)
+        .eq("doctor_id", targetDoctorId)
         .eq("patient_id", patientId)
         .maybeSingle();
 
@@ -177,7 +186,7 @@ export const useGrantPatientAccess = () => {
       const { error: insertError } = await supabase
         .from("doctor_patient_access")
         .insert({
-          doctor_id: user.id,
+          doctor_id: targetDoctorId,
           patient_id: patientId,
           is_active: true,
         });
