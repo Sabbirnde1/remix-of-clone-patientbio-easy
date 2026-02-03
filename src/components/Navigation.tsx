@@ -19,6 +19,7 @@ const Navigation = () => {
     { name: "Features", href: "/features", sectionId: "features" },
     { name: "Demo", href: "/demo", sectionId: "demo" },
     { name: "For Hospitals", href: "/hospitals", sectionId: "" },
+    { name: "For Doctors", href: "/doctors/login", sectionId: "" },
     { name: "About", href: "/about", sectionId: "about" },
     { name: "Team", href: "/team", sectionId: "team" },
     { name: "Contact", href: "/contact", sectionId: "contact" },
@@ -37,8 +38,8 @@ const Navigation = () => {
   }, []);
 
   const handleNavClick = useCallback((e: React.MouseEvent, item: { href: string; sectionId: string }) => {
-    // For Hospitals page, navigate directly
-    if (item.href === "/hospitals") {
+    // For Hospitals and Doctors pages, navigate directly
+    if (item.href === "/hospitals" || item.href === "/doctors/login") {
       return; // Let the default Link behavior handle it
     }
     
