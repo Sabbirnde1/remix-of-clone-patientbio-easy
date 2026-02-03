@@ -122,6 +122,48 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_share_history: {
+        Row: {
+          doctor_id: string | null
+          id: string
+          notes: string | null
+          shared_at: string
+          token_id: string | null
+          user_id: string
+        }
+        Insert: {
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          shared_at?: string
+          token_id?: string | null
+          user_id: string
+        }
+        Update: {
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          shared_at?: string
+          token_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_share_history_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_share_history_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "access_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       health_data: {
         Row: {
           bad_habits: string | null

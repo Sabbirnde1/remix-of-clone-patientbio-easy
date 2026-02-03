@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.get-shared-patient-data]
 verify_jwt = false
+
+[functions.generate-document-url]
+verify_jwt = false

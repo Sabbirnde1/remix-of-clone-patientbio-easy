@@ -21,8 +21,12 @@ import {
   AlertTriangle,
   XCircle,
   Home,
+  Eye,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 
 interface PatientProfile {
   display_name: string | null;
@@ -49,6 +53,7 @@ interface HealthRecord {
   category: string | null;
   record_date: string | null;
   provider_name: string | null;
+  file_url?: string;
 }
 
 type PageState = "loading" | "valid" | "expired" | "revoked" | "invalid";
@@ -318,43 +323,7 @@ const ShareViewPage = () => {
 
         {/* Recent Records */}
         {records.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5 text-primary" />
-                Recent Records
-              </CardTitle>
-              <CardDescription>Latest health documents on file</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {records.map((record) => (
-                  <div
-                    key={record.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">{record.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {record.provider_name && `${record.provider_name} • `}
-                          {record.record_date
-                            ? format(new Date(record.record_date), "MMM d, yyyy")
-                            : "No date"}
-                        </p>
-                      </div>
-                    </div>
-                    {record.category && (
-                      <Badge variant="secondary" className="text-xs capitalize">
-                        {record.category.replace("_", " ")}
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <RecordsSection records={records} token={token || ""} />
         )}
 
         {/* Footer */}
@@ -396,6 +365,114 @@ const InfoBlock = ({
     </p>
   </div>
 );
+
+// Records Section with View Document functionality
+const RecordsSection = ({ records, token }: { records: HealthRecord[]; token: string }) => {
+  const [loadingRecordId, setLoadingRecordId] = useState<string | null>(null);
+
+  const handleViewDocument = async (recordId: string) => {
+    setLoadingRecordId(recordId);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-document-url", {
+        body: { token, record_id: recordId },
+      });
+
+      if (error) {
+        console.error("Error generating document URL:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load document. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.error) {
+        toast({
+          title: "Access Denied",
+          description: data.message || "Unable to access this document.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.url) {
+        // Open in new tab
+        window.open(data.url, "_blank", "noopener,noreferrer");
+      }
+    } catch (err) {
+      console.error("Error viewing document:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingRecordId(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <FileText className="h-5 w-5 text-primary" />
+          Recent Records
+        </CardTitle>
+        <CardDescription>Latest health documents on file</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {records.map((record) => (
+            <div
+              key={record.id}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{record.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {record.provider_name && `${record.provider_name} • `}
+                    {record.record_date
+                      ? format(new Date(record.record_date), "MMM d, yyyy")
+                      : "No date"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {record.category && (
+                  <Badge variant="secondary" className="text-xs capitalize hidden sm:inline-flex">
+                    {record.category.replace("_", " ")}
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewDocument(record.id)}
+                  disabled={loadingRecordId === record.id}
+                  className="gap-1"
+                >
+                  {loadingRecordId === record.id ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span className="hidden sm:inline">Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3 w-3" />
+                      <span className="hidden sm:inline">View</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const ErrorPage = ({
   icon,
