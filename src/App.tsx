@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -73,12 +72,11 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <InstallPromptBanner />
+      <Toaster>
+        <TooltipProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <InstallPromptBanner />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/features" element={<FeaturesPage />} />
@@ -152,7 +150,8 @@ const App = () => (
             </Routes>
           </AuthProvider>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </Toaster>
     </QueryClientProvider>
   </ErrorBoundary>
 );
